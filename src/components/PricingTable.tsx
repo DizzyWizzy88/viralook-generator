@@ -1,116 +1,59 @@
 "use client";
 
 import React from 'react';
-import { getAuth } from 'firebase/auth';
-import { app } from '@/lib/firebase/clientApp';
-import { Zap, Check, Sparkles } from 'lucide-react';
-
-const tiers = [
-  {
-    name: "Free",
-    price: "0",
-    interval: "",
-    credits: 5,
-    description: "Perfect for beginners.",
-    features: ["5 Free Generations", "Standard Speed", "Global Feed Access"],
-    buttonText: "Current Plan",
-    priceId: null,
-  },
-  {
-    name: "Pro",
-    price: "19.99",
-    interval: "/mo",
-    credits: 200,
-    description: "For serious creators.",
-    features: ["200 Monthly Credits", "Fast Generation", "Private Vault", "Priority Support"],
-    buttonText: "Upgrade to Pro",
-    priceId: "price_PRO_MONTHLY_ID", // Replace with Stripe Subscription Price ID
-    popular: true,
-  },
-  {
-    name: "Unlimited",
-    price: "39.99",
-    interval: "/mo",
-    credits: 999999,
-    description: "The ultimate studio tool.",
-    features: ["Infinite Generations", "Ultra-Fast GPU Access", "Commercial Rights", "Early Access"],
-    buttonText: "Go Unlimited",
-    priceId: "price_UNLIMITED_MONTHLY_ID", // Replace with Stripe Subscription Price ID
-  },
-];
+import { CheckCircle2 } from 'lucide-react'; // This was the missing line!
 
 export default function PricingTable() {
-  const auth = getAuth(app);
-
-  const handlePurchase = async (priceId: string | null, credits: number, tierName: string) => {
-    if (!priceId) return;
-
-    const user = auth.currentUser;
-    if (!user) {
-      alert("Please sign in to upgrade.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: priceId,
-          userId: user.uid,
-          credits: credits,
-          tier: tierName,
-          mode: "subscription" // Tells the API to create a subscription, not a one-time charge
-        }),
-      });
-
-      const { url } = await response.json();
-      if (url) window.location.href = url;
-    } catch (error) {
-      console.error("Checkout error:", error);
-    }
-  };
+  const plans = [
+    { name: "Starter", price: "0", credits: "5 Generations", features: ["Standard Resolution", "Simulator Mode", "Public Vault"], btn: "Current Plan", theme: "white" },
+    { name: "Pro Studio", price: "19", credits: "50 Generations", features: ["HD Quality", "Identity Consistency", "Private Vault", "Priority Render"], btn: "Upgrade to Pro", theme: "blue", popular: true },
+    { name: "Viral Legend", price: "49", credits: "Unlimited Generations", features: ["4K Resolution", "Commercial License", "Unlimited Flux", "24/7 Support"], btn: "Go Unlimited", theme: "white" },
+  ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
-      {tiers.map((tier) => (
-        <div 
-          key={tier.name} 
-          className={`relative p-8 rounded-[2.5rem] border transition-all duration-500 ${
-            tier.popular 
-            ? 'border-blue-500 bg-blue-500/5 shadow-2xl shadow-blue-500/10' 
-            : 'border-white/5 bg-zinc-900/40'
-          }`}
-        >
-          <div className="text-center space-y-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">{tier.name}</p>
-            <div className="flex items-baseline justify-center">
-              <span className="text-xl font-bold italic">$</span>
-              <span className="text-5xl font-black italic tracking-tighter">{tier.price}</span>
-              <span className="text-zinc-500 font-bold ml-1">{tier.interval}</span>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch px-4">
+      {plans.map((plan) => (
+        <div key={plan.name} className={`relative rounded-[3rem] p-10 flex flex-col items-center text-center space-y-8 transition-all duration-500 shadow-2xl ${
+          plan.theme === 'blue' 
+          ? "bg-[#050505] border-2 border-blue-600 scale-105 z-10" 
+          : "bg-white text-black z-0"
+        }`}>
+          {plan.popular && (
+            <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] font-black px-6 py-2 rounded-full uppercase tracking-widest whitespace-nowrap shadow-xl">
+              Most Popular
+            </span>
+          )}
+          
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black italic uppercase tracking-tighter">{plan.name}</h3>
+            <div className="flex justify-center items-baseline gap-1">
+              <span className="text-6xl font-black italic tracking-tighter">${plan.price}</span>
+              <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">/one-time</span>
             </div>
-            
-            <div className="space-y-4 py-4">
-              {tier.features.map((feature) => (
-                <div key={feature} className="flex items-center gap-3 text-left">
-                  <Check size={12} className="text-blue-500" />
-                  <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-tight">{feature}</span>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => handlePurchase(tier.priceId, tier.credits, tier.name)}
-              disabled={tier.price === "0"}
-              className={`w-full py-4 rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all ${
-                tier.price === "0" 
-                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
-                : 'bg-white text-black hover:bg-blue-600 hover:text-white shadow-xl'
-              }`}
-            >
-              {tier.buttonText}
-            </button>
           </div>
+
+          <span className={`text-[11px] font-black uppercase tracking-[0.2em] py-2 px-4 rounded-full ${
+            plan.theme === 'blue' ? 'bg-blue-500/10 text-blue-500' : 'bg-zinc-100 text-zinc-500'
+          }`}>
+            {plan.credits}
+          </span>
+
+          <ul className="flex-1 space-y-4 text-[10px] font-bold uppercase tracking-widest opacity-80 text-left w-full max-w-[200px] mx-auto">
+            {plan.features.map(f => (
+              <li key={f} className="flex items-center gap-3">
+                <CheckCircle2 size={14} className={plan.theme === 'blue' ? 'text-blue-500' : 'text-zinc-400'}/> 
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <button className={`w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-95 ${
+            plan.theme === 'blue' 
+            ? "bg-blue-600 text-white hover:bg-blue-500 shadow-[0_10px_30px_rgba(37,99,235,0.3)]" 
+            : "bg-zinc-100 text-black hover:bg-zinc-200"
+          }`}>
+            {plan.btn}
+          </button>
         </div>
       ))}
     </div>
