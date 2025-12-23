@@ -1,26 +1,73 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: black;
+  /* Smooth scrolling for the whole page */
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  /* Hides scrollbars for the Global Feed but keeps it scrollable */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Custom text stroke for that "Power" text in your pricing */
+  .text-stroke {
+    -webkit-text-stroke: 1px rgba(59, 130, 246, 0.5);
+    color: transparent;
+  }
+}
+
+/* Premium Background Spotlight Animation */
+@keyframes spotlight {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -55%) scale(1.1);
+  }
+}
+
+.bg-spotlight {
+  animation: spotlight 10s ease-in-out infinite;
+}
+
+/* Glassmorphism card effect */
+.glass-card {
+  background: rgba(23, 23, 23, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Custom selection color (Blue) */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: white;
+}
+
+/* Smooth fade-in for images */
+img {
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Input focus glow */
+input:focus, textarea:focus {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
 }

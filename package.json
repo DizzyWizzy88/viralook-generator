@@ -1,5 +1,6 @@
 {
   "name": "viralook-generator",
+  "type": "module",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +10,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fal-ai/serverless-client": "^0.15.0",
+    "axios": "^1.13.2",
+    "firebase": "^12.7.0",
+    "firebase-admin": "^13.6.0",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.562.0",
     "next": "16.0.10",
+    "openai": "^6.15.0",
     "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "react-dom": "19.2.1",
+    "stripe": "^20.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
