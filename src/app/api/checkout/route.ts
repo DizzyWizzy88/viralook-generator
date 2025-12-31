@@ -32,8 +32,8 @@ export async function POST(req: Request) {
       payment_method_types: ["card"],
       line_items: [{ price: stripePriceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/cancel`,
       metadata: { userId },
     });
 
