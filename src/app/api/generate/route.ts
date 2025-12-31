@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getFirestore, doc, getDoc, updateDoc, increment, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { app } from "@/lib/firebase/clientApp";
+import { fal } from "@fal-ai/client";
 
 const db = getFirestore(app);
 
 export async function POST(req: Request) {
   try {
-    const { prompt, userId } = await req.json();
+    const { prompt, userId, category } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,35 +23,55 @@ export async function POST(req: Request) {
     }
 
     const isUnlimited = userData.isUnlimited || false;
+    const isPro = userData.currentTier === "pro";
     const currentCredits = userData.credits || 0;
 
-    // 2. CHECK CREDITS (This was the error location)
+    // 2. Strict Credit Gate
     if (!isUnlimited && currentCredits < 1) {
-      return NextResponse.json({ error: "Insufficient credits" }, { status: 402 });
+      return NextResponse.json({ 
+        error: "Insufficient credits", 
+        message: "Please upgrade to Pro or Unlimited." 
+      }, { status: 402 });
     }
 
-    // 3. TODO: Insert your AI Generation Logic (Replicate, OpenAI, etc.) here
-    const generatedImageUrl = "https://placeholder-image-url.com"; // Replace with real API call
+    // 3. AI Generation (fal.ai Flux Dev)
+    // We combine the category and prompt for better results
+    const result: any = await fal.subscribe("fal-ai/flux/dev", {
+      input: {
+        prompt: `A professional ${category.toLowerCase()} style image of: ${prompt}. High resolution, 4k, cinematic lighting.`,
+        image_size: "square_hd",
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
+        enable_safety_checker: true
+      },
+      logs: true,
+    });
 
-    // 4. Subtract Credit (only if not unlimited) and log to Global Feed
+    const generatedImageUrl = result.images[0].url;
+
+    // 4. Update Database (Only on success)
     if (!isUnlimited) {
       await updateDoc(userRef, {
-        credits: increment(-1)
+        credits: increment(-1),
+        lastGeneratedAt: serverTimestamp()
       });
     }
 
-    // Add to Global Feed
+    // 5. Log to Global Feed
     await addDoc(collection(db, "global_feed"), {
       url: generatedImageUrl,
       prompt: prompt,
-      userName: userData.displayName || "Anonymous Creator",
+      category: category || "CINEMATIC",
+      userId: userId,
+      userName: userData.displayName || "Studio Member",
+      userTier: isUnlimited ? "Unlimited" : (isPro ? "Pro" : "Starter"),
       createdAt: serverTimestamp(),
     });
 
     return NextResponse.json({ url: generatedImageUrl });
 
   } catch (error: any) {
-    console.error("Generation Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("AI Generation Error:", error);
+    return NextResponse.json({ error: error.message || "AI Engine Timeout" }, { status: 500 });
   }
 }

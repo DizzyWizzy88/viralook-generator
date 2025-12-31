@@ -10,6 +10,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fal-ai/client": "^1.7.2",
     "@fal-ai/serverless-client": "^0.15.0",
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",

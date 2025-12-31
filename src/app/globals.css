@@ -71,3 +71,41 @@ img {
 input:focus, textarea:focus {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
 }
+
+/* FORCE LOGO SIZE - OVERRIDE EVERYTHING */
+nav img[alt="Logo"], 
+.fixed.top-0 img {
+  width: 48px !important;
+  height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  min-width: 48px !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* Ensure the container doesn't expand */
+nav .flex-shrink-0, 
+div[style*="width: 48px"] {
+  width: 48px !important;
+  height: 48px !important;
+  overflow: hidden !important;
+}
+
+/* THE ULTIMATE LOGO FIX */
+img[alt="Viralook Logo"], 
+img[src*="Viralook.png"] {
+  width: 48px !important;
+  height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  object-fit: contain !important;
+  display: inline-block !important;
+}
+
+/* Fix the container so it doesn't stretch the header */
+.flex.items-center.gap-3 div {
+  width: 48px !important;
+  height: 48px !important;
+  overflow: hidden !important;
+}
