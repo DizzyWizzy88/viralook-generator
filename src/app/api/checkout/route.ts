@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia" as any,
+  apiVersion: "2024-11-20.acacia" as any, 
 });
 
 export async function POST(req: Request) {
@@ -17,9 +17,9 @@ export async function POST(req: Request) {
     let stripePriceId = "";
     
     if (planType === "pro") {
-      stripePriceId = "price_1Q_PRO_ID_HERE"; // Replace with your Pro Studio Price ID
+      stripePriceId = "price_1ShaoL0pfq0FZDdatWxNXifX"; // Replace with your Pro Studio Price ID
     } else if (planType === "unlimited") {
-      stripePriceId = "price_1Q_VIRAL_LEGEND_ID_HERE"; // Replace with your Viral Legend Price ID
+      stripePriceId = "price_1ShapQ0pfq0FZDdahuI4Te75"; // Replace with your Viral Legend Price ID
     }
 
     if (!stripePriceId) {
