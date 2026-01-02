@@ -3,8 +3,7 @@ import Stripe from "stripe";
 import { auth } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  // Use null to avoid version mismatch errors with your Stripe account
-  apiVersion: null as any,
+  apiVersion: null as any, // Prevents version mismatch errors
 });
 
 export async function POST(req: Request) {
@@ -16,7 +15,7 @@ export async function POST(req: Request) {
 
     const { planType } = await req.json();
 
-    // Define price IDs based on your Business Plan [cite: 21]
+    // Mapping plan types from your Business Plan
     let stripePriceId = "";
     if (planType === "pro") {
       stripePriceId = process.env.STRIPE_PRO_PRICE_ID!; // $19.99 Tier
@@ -26,17 +25,11 @@ export async function POST(req: Request) {
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: [
-        {
-          price: stripePriceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: stripePriceId, quantity: 1 }],
       mode: "subscription",
-      // These URLs match the folders you just created
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/cancel`,
-      // Metadata is crucial for the Webhook to update the correct user 
+      // Metadata allows the Webhook to identify the user later
       metadata: {
         userId: userId,
         planType: planType,
@@ -45,10 +38,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error("Stripe Checkout Error:", error);
-    return new NextResponse(
-      JSON.stringify({ error: error.message }), 
-      { status: 500 }
-    );
+    console.error("Stripe Error:", error);
+    return new NextResponse(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
