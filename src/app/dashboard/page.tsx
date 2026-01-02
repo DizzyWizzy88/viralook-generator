@@ -1,12 +1,9 @@
-"use client";
-
-import React from 'react';
-import DashboardContent from '@/components/DashboardContent';
+import Generator from "@/components/Generator";
 
 export default function DashboardPage() {
   return (
-    <main className="min-h-screen bg-black">
-      <DashboardContent />
-    </main>
+    <div className="container mx-auto px-4 py-10">
+      <Generator />
+    </div>
   );
 }
