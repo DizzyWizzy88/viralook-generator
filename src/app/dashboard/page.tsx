@@ -1,16 +1,19 @@
 import Generator from "@/components/Generator";
+import CreditBadge from "@/components/CreditBadge";
 
 export default function DashboardPage() {
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-extrabold text-center mb-8 text-gray-900">
-          Viralook AI Studio
-        </h1>
+    <main className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto flex flex-col items-center space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
+            Viralook AI Studio
+          </h1>
+          {/* THE NEW BADGE */}
+          <CreditBadge />
+        </div>
         
-        {/* This is the line that was causing the error */}
         <Generator />
-        
       </div>
     </main>
   );
