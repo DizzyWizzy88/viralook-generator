@@ -1,40 +1,49 @@
 {
   "name": "viralook-generator",
-  "type": "module",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "mobile": "npx expo start"
   },
   "dependencies": {
+    "@expo/next-adapter": "^6.0.0",
     "@fal-ai/client": "^1.7.2",
     "@fal-ai/server-proxy": "^1.1.2",
-    "axios": "^1.13.2",
+    "@fal-ai/serverless-client": "latest",
+    "@tailwindcss/postcss": "^4.1.18",
+    "autoprefixer": "^10.4.23",
     "canvas-confetti": "^1.9.4",
-    "firebase": "^12.7.0",
-    "firebase-admin": "^13.6.0",
-    "framer-motion": "^12.23.26",
-    "jszip": "^3.10.1",
-    "lucide-react": "^0.562.0",
-    "next": "16.0.10",
-    "openai": "^6.15.0",
+    "expo": "~54.0.30",
+    "expo-next-react-navigation": "latest",
+    "firebase": "^11.1.0",
+    "firebase-admin": "^13.0.1",
+    "lucide-react": "latest",
+    "next": "^16.1.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
+    "react-native": "0.76.0",
+    "react-native-web": "^0.19.13",
+    "solito": "latest",
     "stripe": "^20.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "babel-plugin-react-compiler": "1.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.10",
-    "tailwindcss": "^4",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "react-native-web": {
+      "react": "19.2.1"
+    }
   }
 }

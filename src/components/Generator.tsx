@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { fal } from "@fal-ai/client";
 
-// Strategic brand messages
+// --- CONFIGURATION ---
 const SUMMONING_MESSAGES = [
   "Summoning the AI Gods...",
   "Synthesizing new realities...",
@@ -11,7 +11,18 @@ const SUMMONING_MESSAGES = [
   "Checking for creative compliance...",
 ];
 
-// Configure the secure proxy
+// Your actual Stripe Price IDs
+const PLANS = {
+  pro: {
+    id: "price_1ShaoL0pfq0FZDdatWxNXifX", // 50 Credits
+    name: "Pro",
+  },
+  viral_legend: {
+    id: "price_1SXuQu0pfq0FZDdaueO1vTwC", // Unlimited
+    name: "Viral Legend",
+  },
+};
+
 fal.config({
   proxyUrl: "/api/fal/proxy",
 });
@@ -24,7 +35,7 @@ export default function Generator() {
   const [error, setError] = useState<string | null>(null);
   const [isOutOfCredits, setIsOutOfCredits] = useState(false);
 
-  // AI Summoning Sequence Timer
+  // AI Summoning Sequence Animation
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isLoading) {
@@ -35,13 +46,15 @@ export default function Generator() {
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  const handleUpgrade = async () => {
+  // Handle Stripe Checkout for both plans
+  const handleUpgrade = async (planType: 'pro' | 'viral_legend') => {
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          // Replace with your actual Stripe Price ID from your dashboard
-          priceId: "price_1SXuQu0pfq0FZDdaueO1vTwC" 
+          priceId: PLANS[planType].id,
+          planType: planType 
         }),
       });
       const data = await response.json();
@@ -60,7 +73,7 @@ export default function Generator() {
     setIsOutOfCredits(false);
 
     try {
-      // 1. Call the "Bouncer" API to check/deduct credits
+      // 1. Credit check (The Bouncer)
       const creditCheck = await fetch("/api/generate", {
         method: "POST",
         body: JSON.stringify({ prompt }),
@@ -73,7 +86,7 @@ export default function Generator() {
 
       if (!creditCheck.ok) throw new Error("Security check failed.");
 
-      // 2. Real AI Generation
+      // 2. AI Execution
       const result = await fal.subscribe("fal-ai/flux/dev", {
         input: { prompt: prompt },
       });
@@ -95,7 +108,7 @@ export default function Generator() {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Describe your viral look..."
-          className="w-full p-4 rounded-2xl border-2 border-purple-100 focus:border-purple-600 outline-none h-32 bg-purple-50/30 transition-all"
+          className="w-full p-4 rounded-2xl border-2 border-purple-100 focus:border-purple-600 outline-none h-32 bg-purple-50/30 transition-all text-gray-800"
         />
         
         {!isOutOfCredits ? (
@@ -107,12 +120,23 @@ export default function Generator() {
             {isLoading ? "Summoning..." : "Generate Viral Look"}
           </button>
         ) : (
-          <button
-            onClick={handleUpgrade}
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white font-extrabold rounded-2xl shadow-lg animate-bounce"
-          >
-            Upgrade to Viral Legend (Unlimited)
-          </button>
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+            <p className="text-red-500 font-semibold text-center">You are out of credits!</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => handleUpgrade('pro')}
+                className="py-4 px-2 bg-white border-2 border-purple-600 text-purple-600 font-bold rounded-2xl hover:bg-purple-50 transition-all"
+              >
+                Pro: 50 Credits
+              </button>
+              <button
+                onClick={() => handleUpgrade('viral_legend')}
+                className="py-4 px-2 bg-gradient-to-r from-orange-500 to-red-600 text-white font-extrabold rounded-2xl shadow-lg hover:brightness-110 transition-all"
+              >
+                Viral Legend: Unlimited
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
@@ -130,7 +154,7 @@ export default function Generator() {
       )}
 
       {imageUrl && (
-        <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
+        <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white transition-all hover:scale-[1.02]">
           <img src={imageUrl} alt="AI Generated Fashion" className="w-full h-auto" />
         </div>
       )}

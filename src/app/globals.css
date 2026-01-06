@@ -2,110 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
+html, body, #__next {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: #070707;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: black;
-  /* Smooth scrolling for the whole page */
-  scroll-behavior: smooth;
+/* Prevents the 'gray highlight' on mobile taps */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
-@layer utilities {
-  /* Hides scrollbars for the Global Feed but keeps it scrollable */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* Custom text stroke for that "Power" text in your pricing */
-  .text-stroke {
-    -webkit-text-stroke: 1px rgba(59, 130, 246, 0.5);
-    color: transparent;
-  }
+/* Custom scrollbar for that Pro Studio look */
+::-webkit-scrollbar {
+  width: 5px;
 }
-
-/* Premium Background Spotlight Animation */
-@keyframes spotlight {
-  0%, 100% {
-    opacity: 0.4;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: translate(-50%, -55%) scale(1.1);
-  }
+::-webkit-scrollbar-track {
+  background: #070707;
 }
-
-.bg-spotlight {
-  animation: spotlight 10s ease-in-out infinite;
-}
-
-/* Glassmorphism card effect */
-.glass-card {
-  background: rgba(23, 23, 23, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Custom selection color (Blue) */
-::selection {
-  background: rgba(59, 130, 246, 0.3);
-  color: white;
-}
-
-/* Smooth fade-in for images */
-img {
-  transition: opacity 0.5s ease-in-out;
-}
-
-/* Input focus glow */
-input:focus, textarea:focus {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
-}
-
-/* FORCE LOGO SIZE - OVERRIDE EVERYTHING */
-nav img[alt="Logo"], 
-.fixed.top-0 img {
-  width: 48px !important;
-  height: 48px !important;
-  max-width: 48px !important;
-  max-height: 48px !important;
-  min-width: 48px !important;
-  object-fit: cover !important;
-  display: block !important;
-}
-
-/* Ensure the container doesn't expand */
-nav .flex-shrink-0, 
-div[style*="width: 48px"] {
-  width: 48px !important;
-  height: 48px !important;
-  overflow: hidden !important;
-}
-
-/* THE ULTIMATE LOGO FIX */
-img[alt="Viralook Logo"], 
-img[src*="Viralook.png"] {
-  width: 48px !important;
-  height: 48px !important;
-  max-width: 48px !important;
-  max-height: 48px !important;
-  object-fit: contain !important;
-  display: inline-block !important;
-}
-
-/* Fix the container so it doesn't stretch the header */
-.flex.items-center.gap-3 div {
-  width: 48px !important;
-  height: 48px !important;
-  overflow: hidden !important;
+::-webkit-scrollbar-thumb {
+  background: #222;
+  border-radius: 10px;
 }

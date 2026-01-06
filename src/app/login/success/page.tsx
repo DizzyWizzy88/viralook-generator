@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { confetti } from 'canvas-confetti';
 
 export default function SuccessPage() {
   const router = useRouter();

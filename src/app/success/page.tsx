@@ -1,38 +1,46 @@
 "use client";
 
-import { useEffect } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function SuccessPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-black flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl text-center shadow-2xl">
-        <div className="mb-6 inline-flex items-center justify-center w-20 h-20 bg-green-500 rounded-full text-4xl animate-bounce">
-          ⚡
-        </div>
-        
-        <h1 className="text-3xl font-extrabold text-white mb-2">
-          Welcome, Viral Legend!
-        </h1>
-        
-        <p className="text-purple-200 mb-8">
-          Your payment was successful. You now have <strong>unlimited</strong> AI summoning power.
-        </p>
-
-        <Link 
-          href="/dashboard"
-          className="block w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold rounded-2xl hover:scale-105 transition-transform shadow-lg shadow-purple-500/20"
-        >
-          Back to the Studio
-        </Link>
-        
-        <p className="mt-6 text-sm text-purple-300/50">
-          It may take a few seconds for your status to update.
-        </p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-black p-5 text-white">
+      {/* SUCCESS LOGO */}
+      <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full border border-cyan-400 bg-cyan-400/10 shadow-[0_0_20px_rgba(34,211,238,0.2)]">
+        <img src="/Viralook.png" alt="Viralook" className="h-14 w-14 object-contain" />
       </div>
+
+      <h1 className="mb-2 text-center text-3xl font-black tracking-[0.2em] uppercase">
+        Welcome to the Elite
+      </h1>
+      <p className="mb-10 max-w-[300px] text-center text-sm leading-relaxed text-gray-400">
+        Your credits have been synchronized with your Viralook AI Studio account.
+      </p>
+
+      <div className="mb-10 w-full max-w-[400px] rounded-[25px] border border-white/10 bg-[#050505] p-6 shadow-xl">
+        <h2 className="mb-4 text-[10px] font-black tracking-widest text-cyan-400 uppercase">
+          What's Next?
+        </h2>
+        <ul className="space-y-3 text-sm font-medium opacity-80">
+          <li>• Head back to your dashboard</li>
+          <li>• Describe your fashion vision</li>
+          <li>• Generate high-res fashion assets</li>
+        </ul>
+      </div>
+
+      <button 
+        onClick={() => router.push('/dashboard')}
+        className="rounded-xl bg-white px-10 py-4 text-sm font-black tracking-widest text-black transition-transform active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+      >
+        LAUNCH STUDIO
+      </button>
+      
+      <footer className="absolute bottom-8 text-[10px] font-bold tracking-widest text-gray-700 uppercase">
+        viralook.ai | Payment Secured by Stripe
+      </footer>
     </div>
   );
 }
