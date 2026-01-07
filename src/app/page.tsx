@@ -1,48 +1,46 @@
 "use client";
-import React, { useState } from 'react';
-import { GeneratorInput } from "@/components/GeneratorInput";
-import LoadingBar from "@/components/LoadingBar";
-import { useSummoningSequence } from "@/hooks/useSummoningSequence";
 
-export default function ViralookStudio() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+import React from 'react';
+import Generator from "@/components/Generator";
+import PricingTable from "@/components/PricingTable";
 
-  // 1. Initialize the custom summoning hook
-  const { currentMessage, progress } = useSummoningSequence(isLoading);
-
-  const handleSummon = async (config: any) => {
-    setIsLoading(true);
-    try {
-      // Your existing logic to call the Vercel Proxy (src/app/api/fal/proxy/route.ts)
-      // const response = await callFalProxy(config);
-      // setGeneratedImage(response.image_url);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-4xl font-black text-center mb-12 tracking-tighter">
-        VIRALOOK <span className="text-cyan-500">AI STUDIO</span>
-      </h1>
-
-      <div className="max-w-2xl mx-auto">
-        {/* 2. Conditional Rendering: Swap Input for the Summoning Sequence */}
-        {isLoading ? (
-          <LoadingBar message={currentMessage} progress={progress} />
-        ) : (
-          <GeneratorInput onSummon={handleSummon} isLoading={isLoading} />
-        )}
-
-        {/* 3. Display Result */}
-        {generatedImage && !isLoading && (
-          <div className="mt-12 animate-in fade-in zoom-in duration-700">
-            <img src={generatedImage} alt="Summoned Art" className="rounded-3xl shadow-2xl border border-white/10" />
+    <main className="min-h-screen bg-[#0a0a0a] text-white pb-24">
+      {/* 1. Top Navigation / Brand Area */}
+      <nav className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(79,70,229,0.4)]">
+            <span className="text-white font-black text-xs">V</span>
           </div>
-        )}
+          <div className="flex flex-col">
+            <span className="text-sm font-bold tracking-tighter leading-none">VIRALOOK</span>
+            <span className="text-[10px] text-zinc-500 font-medium tracking-[0.2em] uppercase">AI Studio</span>
+          </div>
+        </div>
+        
+        {/* Credits Pill from your screenshot */}
+        <div className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full flex items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Credits</span>
+        </div>
+      </nav>
+
+      <div className="max-w-6xl mx-auto px-6 space-y-24">
+        
+        {/* 2. Original Pricing Models Section */}
+        {/* This will render your Starter, Pro, and Legend cards */}
+        <section className="animate-in fade-in slide-in-from-top-4 duration-1000">
+          <PricingTable />
+        </section>
+
+        {/* 3. Generator Section */}
+        {/* This displays the input box or the "Summoning" loader */}
+        <section className="max-w-3xl mx-auto">
+          <Generator />
+        </section>
+        
       </div>
-    </div>
+    </main>
   );
 }
