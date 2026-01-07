@@ -1,59 +1,41 @@
+"use client";
+
 import React from 'react';
 
-interface LoadingBarProps {
-  message: string;
-  progress: number;
-}
-
-export const LoadingBar = ({ message, progress }: LoadingBarProps) => {
+/**
+ * LoadingBar Component
+ * Displays the "Summoning" state with a shimmering text effect 
+ * and a modern, high-tech progress line.
+ */
+export default function LoadingBar({ progress }: { progress: number }) {
   return (
-    <div className="w-full max-w-xl mx-auto space-y-8 py-12 animate-in fade-in duration-1000">
+    <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-12 space-y-8">
       
-      {/* 1. Dynamic Summoning Message */}
-      <div className="text-center space-y-2">
-        <p className="text-cyan-400 font-mono text-sm tracking-[0.3em] uppercase animate-pulse">
-          {message}
-        </p>
-        <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold">
-          Establishing Secure fal.ai Neural Link...
-        </p>
+      {/* 1. The Summoning Text */}
+      {/* The 'summoning-shimmer' class must be defined in your globals.css */}
+      <div className="summoning-shimmer text-center text-sm md:text-base tracking-[0.3em] uppercase font-black italic">
+        Summoning the AI Gods...
       </div>
 
-      {/* 2. Neon Progress Track */}
-      <div className="relative">
-        {/* Glow Effect behind the bar */}
-        <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full opacity-50" />
+      {/* 2. The Progress Track */}
+      <div className="relative w-full h-[1px] bg-zinc-800 rounded-full overflow-hidden">
         
-        <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 shadow-inner">
-          <div 
-            className="h-full bg-gradient-to-r from-purple-600 via-cyan-400 to-purple-600 bg-[length:200%_100%] animate-shimmer transition-all duration-700 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        {/* The Actual Progress Fill */}
+        <div 
+          className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-600 via-cyan-400 to-purple-600 shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all duration-700 ease-in-out"
+          style={{ width: `${progress}%` }}
+        />
+        
+        {/* Kinetic Scan Effect (The moving light pulse) */}
+        <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-scan" />
       </div>
 
-      {/* 3. Diagnostic Data Grid */}
-      <div className="grid grid-cols-3 gap-4 border-t border-white/5 pt-6">
-        <div className="text-center space-y-1">
-          <span className="block text-gray-700 text-[9px] uppercase font-black">Stability</span>
-          <span className="text-emerald-500 font-mono text-xs">NOMINAL</span>
-        </div>
-        <div className="text-center space-y-1 border-x border-white/5">
-          <span className="block text-gray-700 text-[9px] uppercase font-black">Synthesis</span>
-          <span className="text-white font-mono text-xs">{Math.round(progress)}%</span>
-        </div>
-        <div className="text-center space-y-1">
-          <span className="block text-gray-700 text-[9px] uppercase font-black">Latency</span>
-          <span className="text-cyan-500 font-mono text-xs">LOW</span>
-        </div>
-      </div>
-
-      {/* 4. Lore Footer */}
-      <div className="text-center">
-        <span className="text-[8px] text-gray-800 uppercase tracking-[0.5em] font-bold">
-          Viralook AI Studio — Verified Synthesis Protocol v2026
+      {/* 3. Status Percentage */}
+      <div className="flex flex-col items-center gap-1">
+        <span className="text-[9px] font-black text-zinc-500 tracking-[0.4em] uppercase opacity-70">
+          Manifesting {Math.round(progress)}%
         </span>
       </div>
     </div>
   );
-};
+}

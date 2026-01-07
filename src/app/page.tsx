@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { GeneratorInput } from "@/components/GeneratorInput";
-import { LoadingBar } from "@/components/LoadingBar";
+import LoadingBar from "@/components/LoadingBar";
 import { useSummoningSequence } from "@/hooks/useSummoningSequence";
 
 export default function ViralookStudio() {

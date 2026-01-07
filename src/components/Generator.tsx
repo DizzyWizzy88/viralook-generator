@@ -1,161 +1,86 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { fal } from "@fal-ai/client";
-
-// --- CONFIGURATION ---
-const SUMMONING_MESSAGES = [
-  "Summoning the AI Gods...",
-  "Synthesizing new realities...",
-  "Polishing the pixels...",
-  "Checking for creative compliance...",
-];
-
-// Your actual Stripe Price IDs
-const PLANS = {
-  pro: {
-    id: "price_1ShaoL0pfq0FZDdatWxNXifX", // 50 Credits
-    name: "Pro",
-  },
-  viral_legend: {
-    id: "price_1SXuQu0pfq0FZDdaueO1vTwC", // Unlimited
-    name: "Viral Legend",
-  },
-};
-
-fal.config({
-  proxyUrl: "/api/fal/proxy",
-});
+import React, { useState } from 'react';
+import LoadingBar from './LoadingBar'; // Fixed Default Import
+import { GeneratorInput } from './GeneratorInput';
+import { useSummoningSequence } from '@/hooks/useSummoningSequence';
+import ImageGallery from './ImageGallery';
 
 export default function Generator() {
-  const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [messageIndex, setMessageIndex] = useState(0);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isOutOfCredits, setIsOutOfCredits] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  
+  /**
+   * We pull the current progress and control functions 
+   * from your custom hook to drive the LoadingBar.
+   */
+  const { progress, startSummoning, resetSummoning } = useSummoningSequence();
 
-  // AI Summoning Sequence Animation
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isLoading) {
-      interval = setInterval(() => {
-        setMessageIndex((prev) => (prev + 1) % SUMMONING_MESSAGES.length);
-      }, 3000);
-    }
-    return () => clearInterval(interval);
-  }, [isLoading]);
-
-  // Handle Stripe Checkout for both plans
-  const handleUpgrade = async (planType: 'pro' | 'viral_legend') => {
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          priceId: PLANS[planType].id,
-          planType: planType 
-        }),
-      });
-      const data = await response.json();
-      if (data.url) window.location.href = data.url;
-    } catch (err) {
-      console.error("Stripe redirect failed", err);
-    }
-  };
-
-  const handleGenerate = async () => {
+  const handleGenerate = async (prompt: string) => {
     if (!prompt) return;
 
-    setIsLoading(true);
-    setImageUrl(null);
-    setError(null);
-    setIsOutOfCredits(false);
+    // 1. Enter the "Summoning" state
+    setIsGenerating(true);
+    startSummoning(); 
 
     try {
-      // 1. Credit check (The Bouncer)
-      const creditCheck = await fetch("/api/generate", {
-        method: "POST",
+      // 2. Call your internal API route
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
       });
 
-      if (creditCheck.status === 402) {
-        setIsOutOfCredits(true);
-        throw new Error("Out of credits!");
+      if (!response.ok) {
+        throw new Error("The AI Gods are busy. Please try again later.");
       }
 
-      if (!creditCheck.ok) throw new Error("Security check failed.");
-
-      // 2. AI Execution
-      const result = await fal.subscribe("fal-ai/flux/dev", {
-        input: { prompt: prompt },
-      });
-
-      if (result.data?.images?.[0]?.url) {
-        setImageUrl(result.data.images[0].url);
+      const data = await response.json();
+      
+      // 3. Update the gallery with the new image URL
+      if (data.imageUrl) {
+        setGeneratedImages((prev) => [data.imageUrl, ...prev]);
       }
-    } catch (err: any) {
-      setError(err.message);
+      
+    } catch (error) {
+      console.error("Summoning error:", error);
+      alert("Something went wrong during the summoning ritual.");
     } finally {
-      setIsLoading(false);
+      // 4. Exit the "Summoning" state and reset the bar
+      setIsGenerating(false);
+      resetSummoning();
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-8 text-center bg-white rounded-3xl shadow-xl border border-purple-50">
-      <div className="space-y-4 text-left">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe your viral look..."
-          className="w-full p-4 rounded-2xl border-2 border-purple-100 focus:border-purple-600 outline-none h-32 bg-purple-50/30 transition-all text-gray-800"
-        />
-        
-        {!isOutOfCredits ? (
-          <button
-            onClick={handleGenerate}
-            disabled={isLoading || !prompt}
-            className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-2xl shadow-lg transition-transform active:scale-95 disabled:opacity-50"
-          >
-            {isLoading ? "Summoning..." : "Generate Viral Look"}
-          </button>
-        ) : (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-            <p className="text-red-500 font-semibold text-center">You are out of credits!</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                onClick={() => handleUpgrade('pro')}
-                className="py-4 px-2 bg-white border-2 border-purple-600 text-purple-600 font-bold rounded-2xl hover:bg-purple-50 transition-all"
-              >
-                Pro: 50 Credits
-              </button>
-              <button
-                onClick={() => handleUpgrade('viral_legend')}
-                className="py-4 px-2 bg-gradient-to-r from-orange-500 to-red-600 text-white font-extrabold rounded-2xl shadow-lg hover:brightness-110 transition-all"
-              >
-                Viral Legend: Unlimited
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {isLoading && (
-        <div className="flex flex-col items-center py-10 space-y-4">
-          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-          <p className="text-xl font-medium text-purple-600 animate-pulse">
-            {SUMMONING_MESSAGES[messageIndex]}
-          </p>
+    <div className="w-full max-w-4xl mx-auto space-y-12 py-10 px-4">
+      {/* CONDITIONAL RENDERING:
+          If isGenerating is true, the user sees the high-end loader.
+          Otherwise, they see the input field.
+      */}
+      {isGenerating ? (
+        <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-1000">
+          <LoadingBar progress={progress} />
+        </div>
+      ) : (
+        <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+          <GeneratorInput onGenerate={handleGenerate} />
         </div>
       )}
 
-      {error && !isOutOfCredits && (
-        <div className="p-4 bg-red-50 text-red-600 rounded-xl">{error}</div>
-      )}
-
-      {imageUrl && (
-        <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white transition-all hover:scale-[1.02]">
-          <img src={imageUrl} alt="AI Generated Fashion" className="w-full h-auto" />
+      {/* GALLERY SECTION:
+          Appears only once images have been created.
+      */}
+      {generatedImages.length > 0 && (
+        <div className="pt-16 border-t border-zinc-900 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <div className="flex items-center gap-4 mb-8">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-500 italic">
+              Manifested Creations
+            </h2>
+            <div className="h-[1px] flex-1 bg-zinc-900" />
+          </div>
+          
+          <ImageGallery images={generatedImages} />
         </div>
       )}
     </div>

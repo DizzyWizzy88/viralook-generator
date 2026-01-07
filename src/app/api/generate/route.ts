@@ -1,31 +1,35 @@
+import { fal } from "@fal-ai/client";
 import { NextResponse } from "next/server";
-import * as fal from "@fal-ai/serverless-client";
 
 export async function POST(req: Request) {
+  const { prompt, image_url, strength, deviceId, type } = await req.json();
+
   try {
-    const { prompt } = await req.json();
-    
-    if (!process.env.FAL_KEY) {
-      console.error("Missing FAL_KEY");
-      return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
+    // 1. CRYSTALIZE (4K UPSCALE) LOGIC
+    if (type === "upscale") {
+      const result: any = await fal.subscribe("fal-ai/fotor-upscaler", {
+        input: {
+          image_url: image_url,
+          upscale_factor: 2, // 2x or 4x depending on your credit tier
+        },
+      });
+      return NextResponse.json({ imageUrl: result.image.url });
     }
 
-    // Initialize inside the handler
-    fal.config({ credentials: process.env.FAL_KEY });
-
-    console.log("Generating for:", prompt);
-
-    const result: any = await fal.subscribe("fal-ai/flux/schnell", {
-      input: { prompt, image_size: "landscape_16_9" },
+    // 2. STANDARD SUMMON / EVOLVE LOGIC
+    const endpoint = image_url ? "fal-ai/flux-vision-upscaler" : "fal-ai/flux/schnell";
+    const result: any = await fal.subscribe(endpoint, {
+      input: {
+        prompt: prompt,
+        image_url: image_url || undefined,
+        strength: strength || 0.35,
+        image_size: "landscape_4_3",
+      },
     });
 
-    if (!result?.images?.[0]?.url) {
-      throw new Error("AI provider returned empty result");
-    }
+    return NextResponse.json({ imageUrl: result.image.url });
 
-    return NextResponse.json({ image_url: result.images[0].url });
-  } catch (error: any) {
-    console.error("FAL_API_ERROR:", error.message);
-    return NextResponse.json({ error: error.message || "Generation Failed" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: "Neural link failed" }, { status: 500 });
   }
 }
