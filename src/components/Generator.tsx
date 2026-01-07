@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import LoadingBar from './LoadingBar'; // Fixed Default Import
-import { GeneratorInput } from './GeneratorInput';
+import GeneratorInput from './GeneratorInput';
 import { useSummoningSequence } from '@/hooks/useSummoningSequence';
 import ImageGallery from './ImageGallery';
 
