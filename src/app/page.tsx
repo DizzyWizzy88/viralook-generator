@@ -4,32 +4,39 @@ import React from 'react';
 import Generator from "@/components/Generator";
 import PricingTable from "@/components/PricingTable";
 
-export default function DashboardPage() {
+export default function Page() {
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white pb-24">
-      {/* Branding Header */}
-      <nav className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-black text-xs">V</span>
-          </div>
+    <main className="min-h-screen bg-black text-white px-4 py-10">
+      <div className="max-w-5xl mx-auto space-y-12">
+        
+        {/* Header / Brand Bar */}
+        <header className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6 flex justify-between items-center">
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tighter leading-none uppercase">Viralook</span>
-            <span className="text-[10px] text-zinc-500 font-medium tracking-[0.2em] uppercase">AI Studio</span>
+            <h1 className="text-xl font-black tracking-tighter">VIRALOOK</h1>
+            <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">AI Studio</span>
           </div>
-        </div>
-      </nav>
+          <div className="bg-zinc-800/50 px-4 py-2 rounded-2xl border border-zinc-700 flex items-center gap-2">
+            <span className="text-[10px] font-black text-zinc-500 tracking-tighter">•••</span>
+            <span className="text-[10px] font-black text-cyan-400 uppercase">Credits</span>
+          </div>
+        </header>
 
-      <div className="max-w-6xl mx-auto px-6 space-y-24">
-        {/* Pricing Cards (Top) */}
+        {/* Pricing Cards Row */}
         <section>
           <PricingTable />
         </section>
 
-        {/* Generator Area (Bottom) */}
-        <section className="max-w-3xl mx-auto">
+        {/* Prompt Input Section */}
+        <section className="max-w-3xl mx-auto space-y-8 pb-20">
           <Generator />
+          
+          <div className="flex justify-center">
+             <button className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 hover:text-white transition-colors">
+               Explore Creations
+             </button>
+          </div>
         </section>
+        
       </div>
     </main>
   );
