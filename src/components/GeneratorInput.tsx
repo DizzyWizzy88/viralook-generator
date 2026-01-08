@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 
-// Make sure it says "export default function"
 export default function GeneratorInput({ onGenerate }: { onGenerate: (prompt: string) => void }) {
   const [prompt, setPrompt] = useState("");
 
@@ -17,7 +16,7 @@ export default function GeneratorInput({ onGenerate }: { onGenerate: (prompt: st
       
       <button
         onClick={() => onGenerate(prompt)}
-        className="w-full py-6 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-2xl"
+        className="w-full py-6 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-zinc-200 transition-all active:scale-[0.98]"
       >
         Create Visual
       </button>
