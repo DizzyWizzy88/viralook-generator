@@ -71,3 +71,31 @@ html, body, #__next {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+@layer components {
+  .border-beam-card {
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    background: linear-gradient(black, black) padding-box,
+                linear-gradient(90deg, #4f46e5, #9333ea, #06b6d4, #4f46e5) border-box;
+    background-size: 200% 100%;
+    animation: border-beam 4s linear infinite;
+  }
+
+  .summoning-shimmer {
+    background: linear-gradient(90deg, #52525b, #ffffff, #52525b);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  @keyframes border-beam {
+    to { background-position: 200% center; }
+  }
+
+  @keyframes shimmer {
+    to { background-position: 200% center; }
+  }
+}
