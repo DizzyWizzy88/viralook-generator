@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #__next {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: #070707;
+}
+
+/* Prevents the 'gray highlight' on mobile taps */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom scrollbar for that Pro Studio look */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #070707;
+}
+::-webkit-scrollbar-thumb {
+  background: #222;
+  border-radius: 10px;
+}
+@layer components {
+  /* 1. Summoning Text Shimmer */
+  .summoning-shimmer {
+    background: linear-gradient(90deg, #555, #fff, #555);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShimmer 3s linear infinite;
+  }
+
+  /* 2. Viral Legend Border Beam */
+  .border-beam-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .border-beam-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(transparent, #7400ff, #00f2ff, transparent 30%);
+    animation: rotate-beam 4s linear infinite;
+  }
+
+  /* Keeps the card content dark inside the beam */
+  .card-inner-content {
+    position: relative;
+    background: #0a0a0a;
+    z-index: 10;
+    margin: 2px; /* This defines the thickness of the beam */
+    border-radius: inherit;
+  }
+}
+
+@keyframes textShimmer {
+  to { background-position: 200% center; }
+}
+
+@keyframes rotate-beam {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@layer components {
+  .border-beam-card {
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    background: linear-gradient(black, black) padding-box,
+                linear-gradient(90deg, #4f46e5, #9333ea, #06b6d4, #4f46e5) border-box;
+    background-size: 200% 100%;
+    animation: border-beam 4s linear infinite;
+  }
+
+  .summoning-shimmer {
+    background: linear-gradient(90deg, #52525b, #ffffff, #52525b);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  @keyframes border-beam {
+    to { background-position: 200% center; }
+  }
+
+  @keyframes shimmer {
+    to { background-position: 200% center; }
+  }
+}

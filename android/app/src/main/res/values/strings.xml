@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Viralook Generator</string>
+    <string name="title_activity_main">Viralook Generator</string>
+    <string name="package_name">com.viralook.generator</string>
+    <string name="custom_url_scheme">com.viralook.generator</string>
+</resources>
