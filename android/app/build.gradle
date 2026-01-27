@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 // This creates a version code based on the current date and time
 // Format: YYMMDDHHMM (e.g., 2601201645)
-def generateVersionCode() {
+def ggenerateVersionCode() {
     return new Date().format('yyMMddHHmm').toInteger()
 }
 android {
     namespace "com.viralook.generator"
-    compileSdk rootProject.ext.compileSdkVersion
+    compileSdk 35
 
     // 1. ADDED SIGNING CONFIGURATION
     signingConfigs {
@@ -23,9 +23,9 @@ android {
     defaultConfig {
         applicationId "com.viralook.generator"
         minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode generateVersionCode() // <-- UPDATED TO PREVENT UPGRADE ERROR
-        versionName "1.0.2"
+        targetSdkVersion 35
+        versionCode 6
+        versionName "2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'

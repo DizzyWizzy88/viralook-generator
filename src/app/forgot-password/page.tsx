@@ -1,46 +1,79 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase"; // Updated Import
 import { sendPasswordResetEmail } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Sparkles, ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    const auth = getFirebaseAuth(); // Use Getter
+
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage("Check your inbox for a reset link!");
-      setError("");
+      setMessage("Reset link sent! Check your inbox.");
     } catch (err: any) {
-      setError("Could not send reset email. Check the address.");
+      setError(err.message || "Failed to send reset email.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white p-4">
-      <div className="w-full max-w-md bg-zinc-900 p-8 rounded-2xl border border-zinc-800">
-        <h1 className="text-2xl font-bold mb-4">Reset Password</h1>
-        {message && <p className="text-green-500 mb-4 text-sm">{message}</p>}
-        {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center mb-4 border border-white/5">
+            <Sparkles size={24} className="text-blue-500" />
+          </div>
+          <h2 className="text-4xl font-black italic tracking-tighter uppercase text-center">Reset <br/>Password</h2>
+          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Enter your email to recover access</p>
+        </div>
+
+        {message && (
+          <div className="bg-blue-500/10 border border-blue-500/50 p-4 rounded-xl text-blue-500 text-[10px] font-black uppercase tracking-widest text-center">
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-xl text-red-500 text-[10px] font-black uppercase tracking-widest text-center">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleReset} className="space-y-4">
           <input
             type="email"
-            placeholder="Enter your email"
-            className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700"
+            placeholder="EMAIL ADDRESS"
+            className="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl outline-none focus:border-blue-500/50 transition-all text-[11px] font-black tracking-widest uppercase"
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <button type="submit" className="w-full bg-blue-600 py-3 rounded-lg font-bold">
-            Send Reset Link
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-white text-black font-black uppercase text-[11px] tracking-[0.2em] py-5 rounded-xl hover:bg-zinc-200 transition-all"
+          >
+            {loading ? "SENDING..." : "SEND RESET LINK"}
           </button>
         </form>
-        <Link href="/login" className="block text-center mt-4 text-sm text-zinc-400 hover:text-white">
-          Back to Login
+
+        <Link href="/login" className="flex items-center justify-center gap-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest hover:text-white transition-colors">
+          <ArrowLeft size={12} /> Back to Login
         </Link>
       </div>
     </div>

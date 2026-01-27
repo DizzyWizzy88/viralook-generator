@@ -1,10 +1,12 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.viralook.generator',
+  appId: 'com.viralook.app', 
   appName: 'Viralook Generator',
-  webDir: 'out', // Change 'www' to 'out'
-  bundledWebRuntime: false
+  webDir: 'out',
+  server: {
+    androidScheme: 'https'
+  }
 };
 
 export default config;

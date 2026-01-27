@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase"; 
+import { getFirebaseAuth } from "@/lib/firebase"; 
 import { 
   signInWithEmailAndPassword, 
   GoogleAuthProvider, 
@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const auth = getFirebaseAuth();
 
   // 1. Handle Email/Password Login (Required for Google Reviewer)
   const handleEmailLogin = async (e: React.FormEvent) => {
