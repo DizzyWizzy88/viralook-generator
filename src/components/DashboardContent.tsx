@@ -172,5 +172,4 @@ function DashboardInner() {
         </div>
       </main>
     </div>
-  );
 }
