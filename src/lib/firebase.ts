@@ -12,10 +12,9 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Getters to prevent SSR/Android evaluation crashes
+// Export instances as functions to ensure they are only called when needed
+export const getFirebaseApp = () => app;
 export const getFirebaseAuth = (): Auth => getAuth(app);
 export const getFirebaseDb = (): Firestore => getFirestore(app);
-
-export { app };

@@ -1,18 +1,11 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-//output: 'export',
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  assetPrefix: './', 
   trailingSlash: true,
   images: {
     unoptimized: true,
   },
-  // ADD THESE TWO BLOCKS BELOW:
-  typescript: {
-    ignoreBuildErrors: true, 
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-};
+}
 
 export default nextConfig;
