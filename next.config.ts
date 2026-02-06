@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  distDir: 'out',
-  images: { unoptimized: true },
-  typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
-};
+  assetPrefix: './', 
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+}
+
 export default nextConfig;

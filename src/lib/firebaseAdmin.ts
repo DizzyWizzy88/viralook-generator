@@ -1,15 +1,18 @@
-import * as admin from "firebase-admin";
+// src/lib/firebaseAdmin.ts
+// This file is MOCKED for Static Export (Android/Capacitor)
+// Admin logic should be handled via Firebase Cloud Functions, not on-device.
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
+export const adminDb = null as any;
+export const adminAuth = null as any;
 
-const adminDb = admin.firestore();
+const admin = {
+  apps: [],
+  initializeApp: () => {},
+  credential: {
+    cert: () => ({})
+  },
+  firestore: () => ({}),
+  auth: () => ({})
+} as any;
 
-export { adminDb };
+export default admin;

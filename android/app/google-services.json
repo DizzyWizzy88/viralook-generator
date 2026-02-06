@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "994498276710",
+    "project_id": "rapid-digit-480820-s5",
+    "storage_bucket": "rapid-digit-480820-s5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:994498276710:android:671a39e364929e43816ca7",
+        "android_client_info": {
+          "package_name": "com.viralook.generator"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnNtvhCLZ6tXtVdTCbgfUdbjuq7h-WAcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

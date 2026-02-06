@@ -8,6 +8,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
+    "mobile:sync": "npm run build && npx cap sync",
     "mobile": "npx expo start"
   },
   "dependencies": {

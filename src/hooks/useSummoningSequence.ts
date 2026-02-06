@@ -1,43 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
-const SUMMONING_MESSAGES = [
-  "Summoning the AI Gods...",
-  "Awakening the AI Core...",
-  "Consulting the Digital Oracles...",
-  "Synthesizing Viral Sigils...",
-  "Channelling Neon Energy...",
-  "Manifesting your Vision..."
-];
-
-export const useSummoningSequence = (isLoading: boolean) => {
-  const [currentMessage, setCurrentMessage] = useState(SUMMONING_MESSAGES[0]);
+export const useSummoningSequence = () => {
   const [progress, setProgress] = useState(0);
+  const [currentMessage, setCurrentMessage] = useState("INITIALIZING...");
 
-  useEffect(() => {
-    if (!isLoading) {
-      setProgress(0);
-      setCurrentMessage(SUMMONING_MESSAGES[0]);
-      return;
+  const messages = [
+    "ANALYZING VIBE...",
+    "SYNTHESIZING STYLE...",
+    "SUMMONING THE AI GODS...",
+    "FINALIZING PIXELS..."
+  ];
+
+  const startSummoning = useCallback(async () => {
+    setProgress(0);
+    for (let i = 0; i < messages.length; i++) {
+      setCurrentMessage(messages[i]);
+      // Simulate progress steps
+      for (let p = 0; p < 25; p++) {
+        setProgress(prev => prev + 1);
+        await new Promise(r => setTimeout(r, 40)); 
+      }
     }
+    setCurrentMessage("COMPLETE");
+    setProgress(100);
+  }, []);
 
-    // Cycle messages every 2.5 seconds
-    const msgInterval = setInterval(() => {
-      setCurrentMessage(prev => {
-        const index = SUMMONING_MESSAGES.indexOf(prev);
-        return SUMMONING_MESSAGES[(index + 1) % SUMMONING_MESSAGES.length];
-      });
-    }, 2500);
+  const resetSummoning = useCallback(() => {
+    setProgress(0);
+    setCurrentMessage("READY TO SUMMON");
+  }, []);
 
-    // Exponential progress (fast at first, slows down near 95%)
-    const progInterval = setInterval(() => {
-      setProgress(prev => (prev < 95 ? prev + (95 - prev) * 0.1 : prev));
-    }, 400);
-
-    return () => {
-      clearInterval(msgInterval);
-      clearInterval(progInterval);
-    };
-  }, [isLoading]);
-
-  return { currentMessage, progress };
+  return { progress, currentMessage, startSummoning, resetSummoning };
 };

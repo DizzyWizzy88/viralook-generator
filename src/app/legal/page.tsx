@@ -4,46 +4,49 @@ import Link from "next/link";
 
 export default function LegalPage() {
   return (
-    <div className="min-h-screen bg-black text-zinc-300 p-8 font-sans">
-      <div className="max-w-3xl mx-auto space-y-12">
-        <div className="border-b border-zinc-800 pb-8">
-          <Link href="/signup" className="text-blue-500 hover:text-blue-400 text-sm">
+    <div style={{ backgroundColor: '#000000', color: '#d4d4d8', minHeight: '100vh', padding: '2rem', fontFamily: 'sans-serif' }}>
+      <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
+        
+        {/* Header */}
+        <div style={{ borderBottom: '1px solid #27272a', paddingBottom: '2rem', marginBottom: '3rem' }}>
+          <Link href="/signup" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.875rem' }}>
             ← Back to Signup
           </Link>
-          <h1 className="text-4xl font-bold text-white mt-4">Legal Information</h1>
-          <p className="text-zinc-500 mt-2">Last Updated: January 2026</p>
+          <h1 style={{ color: '#ffffff', fontSize: '2.25rem', fontWeight: 'bold', marginTop: '1rem' }}>
+            Legal & Privacy Center
+          </h1>
+          <p style={{ color: '#71717a', marginTop: '0.5rem' }}>Last Updated: January 2026</p>
         </div>
 
-        {/* Privacy Policy Section */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-white">Privacy Policy</h2>
-          <p>
-            Viralook values your privacy. This policy explains how we handle your information when you use our AI generation services:
+        {/* 1. Account Deletion */}
+        <section style={{ backgroundColor: '#18181b', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid #27272a', marginBottom: '3rem' }}>
+          <h2 style={{ color: '#ffffff', fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem' }}>
+            Account & Data Deletion
+          </h2>
+          <p style={{ lineHeight: '1.6' }}>
+            Users may request full removal of their account and associated data via the email link below.
           </p>
-          <ul className="list-disc ml-6 space-y-2">
-            <li><strong>Data Collection:</strong> We collect your email address for account authentication via Firebase.</li>
-            <li><strong>Image Data:</strong> Images you upload are processed by AI APIs to generate results. We do not use your personal images for training our base models.</li>
-            <li><strong>Storage:</strong> Your data is securely stored using Google Firebase infrastructure.</li>
-            <li><strong>Third Parties:</strong> We do not sell your personal data to third parties.</li>
+          <div style={{ marginTop: '1.5rem' }}>
+            <a 
+              href="mailto:dr3930397@gmail.com?subject=Account%20Deletion%20Request"
+              style={{ display: 'inline-block', backgroundColor: '#ffffff', color: '#000000', fontWeight: 'bold', padding: '0.6rem 1.5rem', borderRadius: '0.375rem', textDecoration: 'none' }}
+            >
+              Request Account Deletion
+            </a>
+          </div>
+        </section>
+
+        {/* 2. Privacy Policy */}
+        <section style={{ marginBottom: '3rem' }}>
+          <h2 style={{ color: '#ffffff', fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem' }}>Privacy Policy</h2>
+          <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+            <li><strong style={{ color: '#ffffff' }}>Email:</strong> Collected for account authentication.</li>
+            <li><strong style={{ color: '#ffffff' }}>Photos:</strong> Processed solely for AI generation.</li>
           </ul>
         </section>
 
-        {/* Terms of Service Section */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-white">Terms of Service</h2>
-          <p>
-            By creating an account, you agree to the following terms:
-          </p>
-          <ul className="list-disc ml-6 space-y-2">
-            <li><strong>Acceptable Use:</strong> You agree not to generate content that is illegal, contains graphic violence, or infringes on the intellectual property of others.</li>
-            <li><strong>AI Output:</strong> You acknowledge that AI-generated content may contain imperfections and results are not guaranteed.</li>
-            <li><strong>Account Security:</strong> You are responsible for maintaining the confidentiality of your login credentials.</li>
-            <li><strong>Credits:</strong> Any generation credits provided are for use within the app and have no cash value.</li>
-          </ul>
-        </section>
-
-        <footer className="pt-8 border-t border-zinc-800 text-center text-zinc-600 text-sm">
-          &copy; 2026 Viralook. All rights reserved.
+        <footer style={{ borderTop: '1px solid #27272a', paddingTop: '2rem', textAlign: 'center', color: '#52525b', fontSize: '0.875rem' }}>
+          &copy; 2026 Viralook Generator • dr3930397@gmail.com
         </footer>
       </div>
     </div>
