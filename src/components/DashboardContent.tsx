@@ -1,94 +1,53 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { 
-  doc, 
-  onSnapshot, 
-  collection, 
-  query, 
-  limit, 
-  orderBy, 
-  getDoc, 
-  setDoc 
-} from 'firebase/firestore';
-import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
-import { LogOut, Sparkles, Zap, LayoutGrid } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { collection, query, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { LogOut, Sparkles, Zap } from "lucide-react";
 
 export default function DashboardContent() {
-  return (
-    <Suspense fallback={<div className="bg-black min-h-screen" />}>
-      <DashboardInner />
-    </Suspense>
-  );
-}
-
-function DashboardInner() {
-  const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [credits, setCredits] = useState<number | null>(null);
-  const [isUnlimited, setIsUnlimited] = useState(false);
-  const [communityImages, setCommunityImages] = useState<any[]>([]);
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [communityImages, setCommunityImages] = useState<any[]>([]);
+  const [credits, setCredits] = useState(0);
+  const [isUnlimited, setIsUnlimited] = useState(false);
+
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDb();
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
-    const db = getFirebaseDb();
-
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        router.push('/login');
-        return;
-      }
       setUser(currentUser);
-
-      const userRef = doc(db, "users", currentUser.uid);
-      const docSnap = await getDoc(userRef);
-      
-      if (!docSnap.exists()) {
-        await setDoc(userRef, {
-          credits: 2,
-          email: currentUser.email,
-          createdAt: new Date().toISOString(),
-          isUnlimited: false
-        });
-      }
-
-      const unsubscribeUser = onSnapshot(userRef, (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          setCredits(data.credits ?? 0);
-          setIsUnlimited(data.isUnlimited ?? false);
+      if (currentUser) {
+        // Fetch user stats (credits/unlimited status)
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          setCredits(userDoc.data().credits || 0);
+          setIsUnlimited(userDoc.data().isUnlimited || false);
         }
-      });
-
-      return () => unsubscribeUser();
+      }
     });
 
-    // We removed 'orderBy' temporarily to ensure images show up even if timestamps are missing
-    const q = query(collection(db, "global_feed"), limit(20));
-    
-    const unsubscribeFeed = onSnapshot(q, (snap) => {
-      setCommunityImages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    // Listen to the global feed
+    const q = query(collection(db, "global_feed"), orderBy("createdAt", "desc"));
+    const unsubscribeFeed = onSnapshot(q, (snapshot) => {
+      const imgs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setCommunityImages(imgs);
     });
 
     return () => {
       unsubscribeAuth();
       unsubscribeFeed();
     };
-  }, [router]);
+  }, [auth, db]);
 
   const handleGenerate = async () => {
-      console.log("CLICK DETECTED!");
-      alert("Attempting to generate...");  
-   // if (!prompt) return;
-    
-   // if (!isUnlimited && credits !== null && credits <= 0) {
-      alert("Out of credits! Please upgrade.");
-      return;
-    }
+    if (!prompt || !user) return;
 
     setGenerating(true);
     try {
@@ -102,14 +61,15 @@ function DashboardInner() {
 
       if (response.ok) {
         setPrompt("");
-        console.log("DEBUG: Generation successful!");
+        // Credits will update automatically if you have a listener on the user doc, 
+        // or you can manually decrement here for instant UI feedback.
+        if (!isUnlimited) setCredits(prev => Math.max(0, prev - 1));
       } else {
-        console.error("DEBUG: API Error:", data.error);
         alert(data.error || "Generation failed");
       }
-    } catch (err) {
-      console.error("DEBUG: Fetch error:", err);
-      alert("Error connecting to server.");
+    } catch (error) {
+      console.error("Generation failed:", error);
+      alert("Something went wrong. Check your connection.");
     } finally {
       setGenerating(false);
     }
@@ -126,14 +86,14 @@ function DashboardInner() {
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Balance</span>
             <span className="text-sm font-black flex items-center gap-1">
               {isUnlimited ? (
-                <span className="text-blue-400 flex items-center gap-1"><Zap size={14} fill="currentColor"/> UNLIMITED</span>
+                <span className="text-blue-400 flex items-center gap-1"><Zap size={14} fill="currentColor" /> UNLIMITED</span>
               ) : (
                 <span className={credits === 0 ? "text-red-500" : "text-white"}>{credits} CREDITS</span>
               )}
             </span>
           </div>
-          <button onClick={() => signOut(getFirebaseAuth())} className="p-2 hover:bg-zinc-900 rounded-full text-zinc-400 hover:text-white">
-            <LogOut size={20}/>
+          <button onClick={() => signOut(auth)} className="p-2 hover:bg-zinc-900 rounded-full text-zinc-400 hover:text-white transition-colors">
+            <LogOut size={20} />
           </button>
         </div>
       </nav>
@@ -144,7 +104,7 @@ function DashboardInner() {
             Ready to <span className="text-zinc-800">Summon?</span>
           </h1>
           <div className="max-w-2xl mx-auto space-y-4">
-            <input 
+            <input
               type="text"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -152,12 +112,12 @@ function DashboardInner() {
               placeholder="Describe the look..."
               className="w-full bg-zinc-900/50 border border-zinc-800 p-5 rounded-2xl text-lg outline-none focus:border-blue-500 transition-all"
             />
-            <button 
+            <button
               onClick={handleGenerate}
-              disabled={generating || !prompt}
+              disabled={generating || !prompt || (credits <= 0 && !isUnlimited)}
               className="w-full bg-white text-black font-black py-5 rounded-2xl flex items-center justify-center gap-2 hover:bg-zinc-200 transition-all active:scale-[0.98] disabled:opacity-50"
             >
-              {generating ? "SUMMONING..." : "CREATE VISUAL"}
+              {generating ? "SUMMONING..." : (credits <= 0 && !isUnlimited) ? "OUT OF CREDITS" : "CREATE VISUAL"}
               <Sparkles size={20} className={generating ? "animate-spin" : ""} />
             </button>
           </div>
@@ -165,11 +125,15 @@ function DashboardInner() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {communityImages.map((img) => (
-            <div key={img.id} className="aspect-[3/4] bg-zinc-900 rounded-2xl overflow-hidden border border-white/5">
-              <img src={img.imageUrl} alt={img.prompt} className="w-full h-full object-cover" />
+            <div key={img.id} className="aspect-[3/4] bg-zinc-900 rounded-2xl overflow-hidden border border-white/5 relative group">
+              <img src={img.imageUrl} alt={img.prompt} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                <p className="text-[10px] text-white/70 line-clamp-2 uppercase font-bold tracking-tight">{img.prompt}</p>
+              </div>
             </div>
           ))}
         </div>
       </main>
     </div>
+  );
 }
