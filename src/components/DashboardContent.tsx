@@ -81,10 +81,11 @@ function DashboardInner() {
   }, [router]);
 
   const handleGenerate = async () => {
-    console.log("DEBUG: handleGenerate triggered"); // Check F12 Console for this!
-    if (!prompt) return;
+      console.log("CLICK DETECTED!");
+      alert("Attempting to generate...");  
+   // if (!prompt) return;
     
-    if (!isUnlimited && credits !== null && credits <= 0) {
+   // if (!isUnlimited && credits !== null && credits <= 0) {
       alert("Out of credits! Please upgrade.");
       return;
     }
