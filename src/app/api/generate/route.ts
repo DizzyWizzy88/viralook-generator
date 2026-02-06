@@ -1,45 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseDb } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, increment, collection, addDoc } from 'firebase/firestore';
+import { NextResponse } from "next/server";
+import * as fal from "@fal-ai/serverless-client";
+import { db } from "@/lib/firebase"; // Make sure this path is correct for your config
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-export async function POST(req: NextRequest) {
+// Configure Fal with your key
+fal.config({
+  credentials: process.env.FAL_KEY,
+});
+
+export async function POST(req: Request) {
+  console.log("--- API START: Received request ---");
   try {
     const { prompt, userId } = await req.json();
-    const db = getFirebaseDb();
+    console.log("Prompt received:", prompt);
 
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 1. Call Fal.ai AI
+    const result = await fal.subscribe("fal-ai/flux/dev", { input: {prompt } });
+    const imageUrl = result.images[0].url;
 
-    const userRef = doc(db, "users", userId);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.data();
-
-    // Guard: Check credits
-    if (!userData || (!userData.isUnlimited && userData.credits <= 0)) {
-      return NextResponse.json({ error: "No credits remaining" }, { status: 403 });
-    }
-
-    // --- REPLICATE / AI CALL START ---
-    // (Replace the URL below with your actual Replicate logic)
-    const generatedImageUrl = "https://placehold.co/600x800/png?text=AI+Visual+Generated"; 
-    // --- REPLICATE / AI CALL END ---
-
-    // 1. Subtract Credit
-    if (!userData.isUnlimited) {
-      await updateDoc(userRef, { credits: increment(-1) });
-    }
-
-    // 2. Save to Feed (The 'createdAt' is vital for sorting!)
-    await addDoc(collection(db, "global_feed"), {
-      userId,
-      imageUrl: generatedImageUrl,
+    await addDoc(collection(db,"global_feed"), {
+      imageUrl,
       prompt,
-      createdAt: new Date().toISOString()
+      userId,
+      createdAt: serverTimestamp(),
     });
 
-    return NextResponse.json({ imageUrl: generatedImageUrl });
+ // 2. Save to Firestore Global Feed
+    console.log("Saving to Firestore...");
+    const docRef = await addDoc(collection(db, "global_feed"), {
+      imageUrl,
+      prompt,
+      userId,
+      createdAt: serverTimestamp(),
+    });
+    console.log("Firestore success! Doc ID:", docRef.id);
 
+    return NextResponse.json({ imageUrl }, { status: 200 });
   } catch (error: any) {
-    console.error("API Crash:", error);
+    console.error("!!! API CRASH !!!", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
