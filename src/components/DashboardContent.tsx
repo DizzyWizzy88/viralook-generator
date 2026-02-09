@@ -15,7 +15,7 @@ export default function DashboardContent() {
   const handleGenerate = async () => {
     if (!prompt) return;
     setLoading(true);
-    await new Promise((resolve)) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     try {
       const response = await fetch("/api/generate", {
