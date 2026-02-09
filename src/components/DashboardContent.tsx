@@ -136,6 +136,3 @@ export default function DashboardContent() {
       </main>
     </div>
   );
-}
-// Force build
-// Triggering Build
