@@ -1,27 +1,22 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  apiKey: "AIzaSyDnaReQsnTgGMU_L5Q3a0S21GcBwG-PtSM",
+  authDomain: "rapid-digit-480820-s5.firebaseapp.com",
+  projectId: "rapid-digit-480820-s5",
+  storageBucket: "rapid-digit-480820-s5.appspot.com",
+  messagingSenderId: "994498276710",
+  appId: "1:994498276710:web:2a63fa6510a563a1816ca7"
 };
 
-// SAFETY CHECK: If we are building (server-side), don't initialize Firebase
-const isBrowser = typeof window !== "undefined";
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-let app;
-if (isBrowser) {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-} else {
-    // Return a dummy object during build to prevent the "Invalid API Key" crash
-    app = { name: "dummy" } as any;
-}
+// These are the new clean names
+export const db = getFirestore(app);
+export const auth = getAuth(app);
 
-export const auth = isBrowser ? getAuth(app) : {} as any;
-export const db = isBrowser ? getFirestore(app) : {} as any;
-export { app };
+// These are the "aliases" to fix your old files
+export const getFirebaseDb = () => db;
+export const getFirebaseAuth = () => auth;

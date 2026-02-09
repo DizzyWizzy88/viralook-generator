@@ -1,0 +1,11 @@
+{
+  "appId": "com.viralook.generator",
+  "appName": "viralook-generator",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  }
+}

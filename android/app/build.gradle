@@ -1,31 +1,24 @@
 apply plugin: 'com.android.application'
 
-// This creates a version code based on the current date and time
-// Format: YYMMDDHHMM (e.g., 2601201645)
-def generateVersionCode() {
-    return new Date().format('yyMMddHHmm').toInteger()
-}
 android {
     namespace "com.viralook.generator"
-    compileSdk rootProject.ext.compileSdkVersion
+    compileSdk 35
 
-    // 1. ADDED SIGNING CONFIGURATION
     signingConfigs {
         release {
-            // This points to the key you generated in your home directory
             storeFile file("/home/dizzywizzy88/my-release-key.jks")
-            storePassword "Deftones1!" // <-- CHANGE THIS TO YOUR ACTUAL PASSWORD
+            storePassword "Deftones1!" 
             keyAlias "my-key-alias"
-            keyPassword "Deftones1!" // <-- CHANGE THIS TO YOUR ACTUAL PASSWORD
+            keyPassword "Deftones1!"
         }
     }
 
     defaultConfig {
         applicationId "com.viralook.generator"
         minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode generateVersionCode() // <-- UPDATED TO PREVENT UPGRADE ERROR
-        versionName "1.0.2"
+        targetSdkVersion 35
+        versionCode 10
+        versionName "2.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
@@ -34,10 +27,10 @@ android {
 
     buildTypes {
         release {
-            // 2. LINKED THE SIGNING CONFIG TO THE RELEASE BUILD
             signingConfig signingConfigs.release 
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -50,27 +43,24 @@ repositories {
 
 dependencies {
     constraints {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0") { because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib") }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0") { because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib") }
+        implementation("org.jetbrains.kotlin-stdlib-jdk7:1.8.0") {
+            because("kotlin-stdlib-jdk7 is now part of kotlin-stdlib")
+        }
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0") {
+            because("kotlin-stdlib-jdk8 is now part of kotlin-stdlib")
+        }
     }
+
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
-    testImplementation "junit:junit:$junitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    
 }
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-}
+// Standard Firebase apply (safe way)
+apply plugin: 'com.google.gms.google-services'

@@ -2,107 +2,127 @@
 
 import React, { useState } from 'react';
 import { 
-  getAuth, 
   signInWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider 
+  GoogleAuthProvider, 
+  signInWithPopup 
 } from 'firebase/auth';
 import { 
-  getFirestore, 
   doc, 
   getDoc, 
   setDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { app } from '@/lib/firebase/clientApp';
+import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase'; // Fixed Import
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 
 export default function LoginContent() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
+      const auth = getFirebaseAuth();
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
-    } catch (error) {
-      alert("Login failed. Check your credentials.");
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError("Invalid email or password.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const loginWithGoogle = async () => {
+  const handleGoogleLogin = async () => {
+    const auth = getFirebaseAuth();
+    const db = getFirebaseDb();
     const provider = new GoogleAuthProvider();
+    
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // AUTO-SIGNUP LOGIC: Check if user document exists in Firestore
+      // Check if user exists in Firestore, if not, create them with 2 credits
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        // Create the user document with 5 starter credits
         await setDoc(userRef, {
-          uid: user.uid,
           email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          credits: 5,
+          credits: 2,
           createdAt: serverTimestamp(),
+          isUnlimited: false
         });
-        console.log("New user document created with 5 credits!");
       }
-
-      router.push('/dashboard');
-    } catch (error) {
-      console.error("Google Login Error:", error);
-      alert("Google login failed. Please check if popups are blocked.");
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError("Google sign-in failed.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center px-6">
-      <div className="max-w-md w-full space-y-8 bg-zinc-900/50 p-10 rounded-[3rem] border border-white/5 backdrop-blur-xl">
-        <div className="text-center space-y-2">
-          <img src="/Viralook.png" alt="Viralook" className="h-8 mx-auto mb-4" />
-          <h2 className="text-3xl font-black tracking-tighter text-white italic uppercase">Welcome Back</h2>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Enter the Studio</p>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <div className="inline-block p-3 bg-zinc-900 rounded-2xl mb-4 border border-white/5">
+            <Sparkles className="text-blue-500" />
+          </div>
+          <h2 className="text-3xl font-black uppercase italic tracking-tighter">Welcome Back</h2>
+          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Enter the studio</p>
         </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-500 text-[10px] font-black uppercase tracking-widest text-center">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input 
             type="email" 
-            placeholder="EMAIL ADDRESS" 
-            className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all font-bold placeholder:text-zinc-700"
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="EMAIL" 
+            className="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl outline-none focus:border-blue-500/50 transition-all text-[11px] font-black tracking-widest uppercase"
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
           />
           <input 
             type="password" 
             placeholder="PASSWORD" 
-            className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all font-bold placeholder:text-zinc-700"
-            onChange={(e) => setPassword(e.target.value)}
+            className="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl outline-none focus:border-blue-500/50 transition-all text-[11px] font-black tracking-widest uppercase"
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
           />
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-blue-500/20 tracking-[0.2em] text-[10px]">
-            SIGN IN
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-white text-black font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-200 transition-all"
+          >
+            {loading ? "AUTHENTICATING..." : "LOGIN"}
           </button>
         </form>
 
-        <div className="relative py-4">
+        <div className="relative">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5"></span></div>
-          <div className="relative flex justify-center text-[10px] uppercase font-black tracking-[0.3em]"><span className="bg-zinc-900 px-4 text-zinc-600">OR</span></div>
+          <div className="relative flex justify-center text-[8px] font-black uppercase"><span className="bg-black px-2 text-zinc-600 tracking-[0.3em]">OR</span></div>
         </div>
 
         <button 
-          type="button"
-          onClick={loginWithGoogle} 
-          className="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-zinc-200 transition-all flex items-center justify-center gap-3 text-[10px] tracking-[0.2em] shadow-2xl active:scale-95"
+          onClick={handleGoogleLogin}
+          className="w-full bg-zinc-900 border border-white/5 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-800 transition-all"
         >
-          CONTINUE WITH GOOGLE
+          Continue with Google
         </button>
+
+        <p className="text-center text-[10px] text-zinc-500 uppercase tracking-widest">
+          New here? <Link href="/signup" className="text-white underline">Create Account</Link>
+        </p>
       </div>
     </div>
   );

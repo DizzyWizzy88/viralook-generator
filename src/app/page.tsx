@@ -4,12 +4,13 @@ import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const router = useRouter();
+
   useEffect(() => {
-    // Only redirect if we are in the browser
-    if (typeof window !== "undefined") {
-      router.push('/login');
-    }
+    // Immediate redirect to the login page
+    router.replace('/login');
   }, [router]);
 
-  return <div className="bg-black min-h-screen text-white flex items-center justify-center">Loading VIRALOOK...</div>;
+  // We return a completely empty div that matches your global background.
+  // This prevents the "Loading..." text from flashing before the redirect.
+  return <div className="min-h-screen bg-black" />;
 }

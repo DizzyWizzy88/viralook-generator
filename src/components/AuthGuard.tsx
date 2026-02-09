@@ -1,38 +1,42 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { app } from '@/lib/firebase/clientApp';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { getFirebaseAuth } from '@/lib/firebase'; // Updated Import
 import { useRouter } from 'next/navigation';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
-  const auth = getAuth(app);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // User is not logged in, send them to login
+    // Get the auth instance safely
+    const auth = getFirebaseAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        // If no user is logged in, send them back to login
         router.push('/login');
       } else {
-        // User is logged in, allow them to see the page
-        setAuthorized(true);
+        setUser(currentUser);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [router]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
+        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em] animate-pulse">
+          Verifying Identity...
+        </div>
       </div>
     );
   }
 
-  return authorized ? <>{children}</> : null;
+  // If we have a user, render the protected content
+  return user ? <>{children}</> : null;
 }

@@ -1,28 +1,35 @@
 "use client";
-export const dynamic = "force-dynamic";
+import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
+import { getFirebaseAuth } from "@/lib/firebase";
 
-import { useState, useEffect } from "react";
+const DashboardContent = dynamic(() => import('@/components/DashboardContent'), { ssr: false });
 
-export default function Dashboard() {
-  const [credits, setCredits] = useState("...");
+export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    // Firebase logic only runs after the page loads in the app
-    const initFirebase = async () => {
-      const { db } = await import("@/lib/firebase");
-      const { doc, onSnapshot } = await import("firebase/firestore");
-      
-      onSnapshot(doc(db, "users", "user_dev_01"), (doc) => {
-        if (doc.exists()) setCredits(doc.data().credits);
-      });
-    };
-    initFirebase();
-  }, []);
+    const auth = getFirebaseAuth();
+    // This listener is the secret to smooth transitions
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.push('/login');
+      } else {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
-  return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-2xl font-black">DASHBOARD</h1>
-      <p className="mt-4">Credits: {credits}</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-blue-500 font-black animate-pulse">
+        INITIALIZING STUDIO...
+      </div>
+    );
+  }
+
+  return <DashboardContent />;
 }
