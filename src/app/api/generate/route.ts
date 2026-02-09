@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     console.log("Prompt received:", prompt);
 
     // 1. Call Fal.ai AI
-    const result = await fal.subscribe("fal-ai/flux/dev", { input: {prompt } });
+    const result: any = await fal.subscribe("fal-ai/flux/dev", { input: {prompt } });
     const imageUrl = result.images[0].url;
 
     await addDoc(collection(db,"global_feed"), {

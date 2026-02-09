@@ -1,20 +1,22 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  apiKey: "AIzaSyDnaReQsnTgGMU_L5Q3a0S21GcBwG-PtSM",
+  authDomain: "rapid-digit-480820-s5.firebaseapp.com",
+  projectId: "rapid-digit-480820-s5",
+  storageBucket: "rapid-digit-480820-s5.appspot.com",
+  messagingSenderId: "994498276710",
+  appId: "1:994498276710:web:2a63fa6510a563a1816ca7"
 };
 
-// Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Export instances as functions to ensure they are only called when needed
-export const getFirebaseApp = () => app;
-export const getFirebaseAuth = (): Auth => getAuth(app);
-export const getFirebaseDb = (): Firestore => getFirestore(app);
+// These are the new clean names
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+// These are the "aliases" to fix your old files
+export const getFirebaseDb = () => db;
+export const getFirebaseAuth = () => auth;
