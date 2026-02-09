@@ -64,21 +64,32 @@ export default function DashboardContent() {
               </div>
             </CardContent>
           </Card>
-
-          {result && (
-            <Card className="animate-in fade-in slide-in-from-bottom-4">
-              <CardHeader>
-                <CardTitle>Generated Result</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-lg bg-slate-100 p-4">
-                  <pre className="whitespace-pre-wrap text-sm">
-                    {JSON.stringify(result, null, 2)}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+ {result && (
+  <Card className="animate-in fade-in slide-in-from-bottom-4 overflow-hidden">
+    <CardHeader>
+      <CardTitle>Generated Result</CardTitle>
+    </CardHeader>
+    <CardContent className="flex justify-center p-0">
+      {/* If result.imageUrl exists, show the image. Otherwise, show the raw data as backup. */}
+      {result.imageUrl ? (
+        <div className="relative w-full aspect-square max-w-lg">
+          <img 
+            src={result.imageUrl} 
+            alt="AI Generated Look" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ) : (
+        <div className="rounded-lg bg-slate-100 p-4 w-full">
+          <pre className="whitespace-pre-wrap text-sm text-red-500">
+            Image URL not found. Raw result:
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+)}
         </div>
       </main>
     </div>
