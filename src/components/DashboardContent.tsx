@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image'; // Required for the logo
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
-// Importing your sub-components
+// Importing your specific components
 import Generator from './Generator';
 import CreditBadge from './CreditBadge';
 import PricingTable from './PricingTable';
@@ -21,18 +22,18 @@ export default function DashboardContent() {
     const user = auth.currentUser;
     if (!user) return;
 
-    // Listen to Firebase for credits
+    // Real-time listener for user data and credits
     const userRef = doc(db, "users", user.uid);
     const unsubscribe = onSnapshot(userRef, (doc) => {
       if (doc.exists()) {
         setUserData(doc.data());
       } else {
-        // Fix: Ensure new users see '2 Credits' instead of 0
+        // Sets 2 free credits for new users not yet in the database
         setUserData({ credits: 2 });
       }
       setLoading(false);
     }, (error) => {
-      console.error("Firebase Error:", error);
+      console.error("Firebase Sync Error:", error);
       setLoading(false);
     });
 
@@ -43,47 +44,81 @@ export default function DashboardContent() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-black text-blue-500">
         <LoadingBar progress={45} />
-        <p className="mt-4 animate-pulse uppercase tracking-widest text-xs">Initializing Studio...</p>
+        <p className="mt-4 animate-pulse uppercase tracking-[0.3em] text-[10px] font-bold">
+          Initializing Studio
+        </p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8 overflow-x-hidden">
-      {/* Header Area */}
-      <div className="max-w-4xl mx-auto flex justify-between items-center mb-10">
-        <h1 className="text-2xl font-black tracking-tighter text-blue-500 italic">
-          VIRALOOK STUDIO
-        </h1>
-        <CreditBadge credits={userData?.credits ?? 0} />
-      </div>
+      
+      {/* HEADER: Logo + Text + Credits */}
+      <header className="max-w-4xl mx-auto flex justify-between items-center mb-12">
+        <div className="flex items-center gap-4">
+          {/* Logo Container */}
+          <div className="relative w-12 h-12">
+            <Image 
+              src="/icon-192.png" 
+              alt="Viralook Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+          
+          {/* Brand Identity */}
+          <div>
+            <h1 className="text-xl font-black tracking-tighter text-white leading-none">
+              VIRALOOK <span className="text-blue-500 italic">STUDIO</span>
+            </h1>
+            <p className="text-[9px] text-zinc-500 font-bold tracking-[0.3em] uppercase mt-1">
+              AI Creative Suite
+            </p>
+          </div>
+        </div>
 
-      {/* Main Layout: Stacked Top-to-Bottom */}
-      <main className="max-w-4xl mx-auto flex flex-col gap-10">
+        <CreditBadge credits={userData?.credits ?? 0} />
+      </header>
+
+      {/* MAIN CONTENT: Vertical Stack */}
+      <main className="max-w-4xl mx-auto flex flex-col gap-12">
         
-        {/* 1. The AI Generator (Main Focus) */}
-        <section className="w-full bg-zinc-900/40 border border-zinc-800/50 rounded-3xl p-6 shadow-2xl">
-          <Generator />
+        {/* 1. Generator Card */}
+        <section className="w-full bg-zinc-900/40 border border-zinc-800/50 rounded-[2rem] p-1 shadow-2xl">
+          <div className="bg-black/20 rounded-[1.8rem] p-6">
+            <Generator />
+          </div>
         </section>
         
-        {/* 2. Pricing & Upgrades (Centered below generator) */}
+        {/* 2. Pricing & Upgrades Section */}
         <section className="w-full py-4">
-          <div className="text-center mb-6">
-            <h2 className="text-sm uppercase tracking-[0.2em] text-zinc-500 font-bold">Subscription Plans</h2>
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-[1px] flex-1 bg-zinc-800"></div>
+            <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">
+              Membership Plans
+            </h2>
+            <div className="h-[1px] flex-1 bg-zinc-800"></div>
           </div>
           <PricingTable />
         </section>
 
-        {/* 3. The Creations Gallery */}
-        <section className="w-full bg-zinc-900/20 border-t border-zinc-800/50 pt-10">
-          <h2 className="text-xl font-bold mb-6 px-2">Your Creations</h2>
-          <ImageGallery />
+        {/* 3. Your Creations Gallery */}
+        <section className="w-full">
+          <div className="flex justify-between items-end mb-6 px-2">
+            <h2 className="text-2xl font-bold tracking-tight">Your Creations</h2>
+            <button className="text-xs text-blue-500 font-bold hover:underline">View All</button>
+          </div>
+          <div className="bg-zinc-900/10 rounded-3xl p-2 border border-zinc-800/30">
+            <ImageGallery />
+          </div>
         </section>
 
       </main>
 
-      {/* Footer spacing */}
-      <div className="h-20" />
+      {/* Bottom Padding for Mobile */}
+      <div className="h-24" />
     </div>
   );
 }
