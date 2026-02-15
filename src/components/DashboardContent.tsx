@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
-// Importing the components we saw in your file list
+// Importing your sub-components
 import Generator from './Generator';
 import CreditBadge from './CreditBadge';
 import PricingTable from './PricingTable';
@@ -21,15 +21,18 @@ export default function DashboardContent() {
     const user = auth.currentUser;
     if (!user) return;
 
-    // Real-time listener for credits and user data
+    // Listen to Firebase for credits
     const userRef = doc(db, "users", user.uid);
     const unsubscribe = onSnapshot(userRef, (doc) => {
       if (doc.exists()) {
         setUserData(doc.data());
+      } else {
+        // Fix: Ensure new users see '2 Credits' instead of 0
+        setUserData({ credits: 2 });
       }
       setLoading(false);
     }, (error) => {
-      console.error("Firebase Snapshot Error:", error);
+      console.error("Firebase Error:", error);
       setLoading(false);
     });
 
@@ -40,47 +43,47 @@ export default function DashboardContent() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-black text-blue-500">
         <LoadingBar progress={45} />
-        <p className="mt-4 animate-pulse">SYNCING DATA...</p>
+        <p className="mt-4 animate-pulse uppercase tracking-widest text-xs">Initializing Studio...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8">
-      {/* Header Section */}
-      <div className="max-w-7xl mx-auto flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-black text-white p-4 md:p-8 overflow-x-hidden">
+      {/* Header Area */}
+      <div className="max-w-4xl mx-auto flex justify-between items-center mb-10">
+        <h1 className="text-2xl font-black tracking-tighter text-blue-500 italic">
           VIRALOOK STUDIO
         </h1>
-        {/* Pass the actual credits from Firebase to your Badge */}
         <CreditBadge credits={userData?.credits ?? 0} />
       </div>
 
-      <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: The Generator Input */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 backdrop-blur-sm">
-            <Generator />
+      {/* Main Layout: Stacked Top-to-Bottom */}
+      <main className="max-w-4xl mx-auto flex flex-col gap-10">
+        
+        {/* 1. The AI Generator (Main Focus) */}
+        <section className="w-full bg-zinc-900/40 border border-zinc-800/50 rounded-3xl p-6 shadow-2xl">
+          <Generator />
+        </section>
+        
+        {/* 2. Pricing & Upgrades (Centered below generator) */}
+        <section className="w-full py-4">
+          <div className="text-center mb-6">
+            <h2 className="text-sm uppercase tracking-[0.2em] text-zinc-500 font-bold">Subscription Plans</h2>
           </div>
-          
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Your Creations</h2>
-            <ImageGallery />
-          </div>
-        </div>
+          <PricingTable />
+        </section>
 
-        {/* Right Column: Pricing/Credits */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-8 space-y-6">
-            <PricingTable />
-            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-              <p className="text-sm text-blue-400 text-center">
-                Need more credits? Upgrade your plan above.
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* 3. The Creations Gallery */}
+        <section className="w-full bg-zinc-900/20 border-t border-zinc-800/50 pt-10">
+          <h2 className="text-xl font-bold mb-6 px-2">Your Creations</h2>
+          <ImageGallery />
+        </section>
+
       </main>
+
+      {/* Footer spacing */}
+      <div className="h-20" />
     </div>
   );
 }
