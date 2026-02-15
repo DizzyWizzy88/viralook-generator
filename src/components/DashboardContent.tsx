@@ -60,7 +60,7 @@ export default function DashboardContent() {
           {/* Logo Container */}
           <div className="relative w-12 h-12">
             <Image 
-              src="/icon-192.png" 
+              src="/Viralook.png" 
               alt="Viralook Logo"
               fill
               className="object-contain"
