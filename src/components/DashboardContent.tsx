@@ -1,97 +1,84 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Loader2, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+
+// Importing the components we saw in your file list
+import Generator from './Generator';
+import CreditBadge from './CreditBadge';
+import PricingTable from './PricingTable';
+import ImageGallery from './ImageGallery';
+import LoadingBar from './LoadingBar';
 
 export default function DashboardContent() {
-  const [prompt, setPrompt] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDb();
 
-  // FIXED: Added 'async' keyword and ensured proper bracket closure
-  const handleGenerate = async () => {
-    if (!prompt) return;
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 10));
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
 
-    try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await response.json();
-      setResult(data);
-    } catch (error) {
-      console.error("Generation failed:", error);
-    } finally {
+    // Real-time listener for credits and user data
+    const userRef = doc(db, "users", user.uid);
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        setUserData(doc.data());
+      }
       setLoading(false);
-    }
-  };
+    }, (error) => {
+      console.error("Firebase Snapshot Error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [auth, db]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-blue-500">
+        <LoadingBar />
+        <p className="mt-4 animate-pulse">SYNCING DATA...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
-      <header className="border-b bg-white px-6 py-4">
-        <h1 className="text-2xl font-bold text-slate-900">Viralook Generator</h1>
-      </header>
+    <div className="min-h-screen bg-black text-white p-4 md:p-8">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+          VIRALOOK STUDIO
+        </h1>
+        {/* Pass the actual credits from Firebase to your Badge */}
+        <CreditBadge credits={userData?.credits ?? 0} />
+      </div>
 
-      <main className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Content</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Describe the look or trend..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={handleGenerate} 
-                  disabled={loading || !prompt}
-                >
-                  {loading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
-                  )}
-                  Generate
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
- {result && (
-  <Card className="animate-in fade-in slide-in-from-bottom-4 overflow-hidden">
-    <CardHeader>
-      <CardTitle>Generated Result</CardTitle>
-    </CardHeader>
-    <CardContent className="flex justify-center p-0">
-      {/* If result.imageUrl exists, show the image. Otherwise, show the raw data as backup. */}
-      {result.imageUrl ? (
-        <div className="relative w-full aspect-square max-w-lg">
-          <img 
-            src={result.imageUrl} 
-            alt="AI Generated Look" 
-            className="w-full h-full object-cover"
-          />
+      <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: The Generator Input */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 backdrop-blur-sm">
+            <Generator />
+          </div>
+          
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Your Creations</h2>
+            <ImageGallery />
+          </div>
         </div>
-      ) : (
-        <div className="rounded-lg bg-slate-100 p-4 w-full">
-          <pre className="whitespace-pre-wrap text-sm text-red-500">
-            Image URL not found. Raw result:
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-)}
+
+        {/* Right Column: Pricing/Credits */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-8 space-y-6">
+            <PricingTable />
+            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <p className="text-sm text-blue-400 text-center">
+                Need more credits? Upgrade your plan above.
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     </div>
