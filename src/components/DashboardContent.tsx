@@ -39,7 +39,7 @@ export default function DashboardContent() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-black text-blue-500">
-        <LoadingBar />
+        <LoadingBar progress={45} />
         <p className="mt-4 animate-pulse">SYNCING DATA...</p>
       </div>
     );
