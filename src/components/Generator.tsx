@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { Sparkles, Zap, AlertCircle, RefreshCw } from 'lucide-react';
 
-// Relative path fixes the CORS issue across preview/production URLs
+// Relative path prevents CORS blocking on different Vercel deployment URLs
 const VERCEL_API_URL = "/api/generate";
 
 export default function Generator() {
@@ -41,14 +41,14 @@ export default function Generator() {
     }
 
     try {
-      // 1. Fetch or Create User Document
+      // 1. Fetch or Auto-Create User Document to prevent 'User Data Not Found'
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       
       let userData;
 
       if (!userSnap.exists()) {
-        console.log("Debug - Document missing. Creating for UID:", user.uid);
+        console.log("Auto-creating missing user document for UID:", user.uid);
         userData = {
           credits: 2,
           email: user.email || "",
@@ -60,7 +60,7 @@ export default function Generator() {
         userData = userSnap.data();
       }
 
-      // 2. Credit Validation
+      // 2. Mathematical Credit Validation
       const currentCredits = Number(userData?.credits || 0);
       if (!userData?.isUnlimited && currentCredits <= 0) {
         setError("OUT OF CREDITS");
@@ -71,7 +71,7 @@ export default function Generator() {
       // 3. Start Visual Sequence
       startSummoning();
 
-      // 4. API Call to Image Generator
+      // 4. API Call with Relative URL (CORS Safe)
       const response = await fetch(VERCEL_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,18 +89,19 @@ export default function Generator() {
         await updateDoc(userRef, { credits: increment(-1) });
       }
 
-      // 6. Add to Global Feed (Fixed userId undefined error)
+      // 6. Global Feed Guard: Prevents 'undefined' userId error
       try {
-        await addDoc(collection(db, "global_feed"), {
-          userId: user.uid,
-          prompt: prompt,
-          imageUrl: data.imageUrl,
-          createdAt: new Date().toISOString(),
-          userName: user.displayName || "Anonymous Creator"
-        });
+        if (user && user.uid) {
+          await addDoc(collection(db, "global_feed"), {
+            userId: user.uid,
+            prompt: prompt,
+            imageUrl: data.imageUrl,
+            createdAt: new Date().toISOString(),
+            userName: user.displayName || "Anonymous Creator"
+          });
+        }
       } catch (feedErr) {
-        console.error("Feed Error (Non-Critical):", feedErr);
-        // We don't stop the UI if just the feed fails
+        console.error("Non-critical feed error:", feedErr);
       }
 
       setResultImage(data.imageUrl);
