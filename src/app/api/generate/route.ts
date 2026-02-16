@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     console.log(`Generating image for: ${prompt}`);
     
     // WE DEFINE IT HERE FIRST
-    const generatedImageUrl = "https://placeholder-image-url.com/result.png"; 
+    const generatedImageUrl = `https://picsum.photos/seed/${Math.random()}/800/800`;
     // --- AI GENERATION END ---
 
     // 2. DATABASE SYNC
