@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useSummoningSequence } from '@/hooks/useSummoningSequence';
 import { getFirebaseDb, getFirebaseAuth } from '@/lib/firebase';
-import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment, getDoc, setDoc } from 'firebase/firestore';
 import { Sparkles, Zap, AlertCircle, Download, RefreshCw } from 'lucide-react';
 
 const VERCEL_API_URL = "https://viralook-generator.vercel.app/api/generate";
@@ -32,11 +32,13 @@ export default function Generator() {
       return;
     }
 
+
     try {
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       
-      // If the document doesn't exist, we create a basic one on the fly
+      let userData; // Use 'let' for proper scoping
+
       if (!userSnap.exists()) {
         console.log("Document missing. Creating default for UID:", user.uid);
         const defaultData = {
@@ -46,12 +48,12 @@ export default function Generator() {
           createdAt: new Date().toISOString()
         };
         await setDoc(userRef, defaultData);
-        // Continue with the newly created data
-        var userData = defaultData;
+        userData = defaultData;
       } else {
-        var userData = userSnap.data();
+        userData = userSnap.data();
       }
 
+      // Force credit check as a number
       const currentCredits = Number(userData?.credits || 0);
 
       if (!userData?.isUnlimited && currentCredits <= 0) {
@@ -60,8 +62,9 @@ export default function Generator() {
         return;
       }
 
+      // Start the visual summoning sequence
       startSummoning();
-      // ... rest of your fetch code ...
+
       // 3. API Call
       const response = await fetch(VERCEL_API_URL, {
         method: "POST",
