@@ -3,79 +3,73 @@ import { fal } from "@fal-ai/client";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 
-// Configure Fal with your environment variable
 fal.config({
   credentials: process.env.FAL_KEY,
 });
 
 export async function POST(req: Request) {
   try {
-    // 1. Parse incoming data
-    const { prompt, userId } = await req.json();
+    const { prompt: userPrompt, userId } = await req.json();
 
-    console.log("--- NEW SUMMONING ---");
-    console.log("Target Prompt:", prompt);
-    console.log("User ID:", userId);
+    if (!userPrompt) return NextResponse.json({ error: "Prompt required" }, { status: 400 });
 
-    if (!prompt) {
-      return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
-    }
+    // STEP 1: ENHANCE THE PROMPT WITH LLAMA 3.1
+    // We use fal-ai/any-llm because it's a flexible way to access Llama
+    const llmResponse: any = await fal.subscribe("fal-ai/any-llm", {
+      input: {
+        model: "meta-llama/llama-3.1-8b-instruct",
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional prompt engineer for FLUX AI. 
+            Your task: Convert simple user ideas into high-quality, vivid, and highly detailed image prompts.
+            Rules:
+            1. Use natural language but be very descriptive.
+            2. Describe the subject, action, environment, lighting (e.g., cinematic, softbox), and camera (e.g., macro, wide angle).
+            3. Output ONLY the rewritten prompt. No "Here is your prompt" or conversation.`
+          },
+          { role: "user", content: `Enhance this idea: ${userPrompt}` }
+        ]
+      },
+    });
 
-    // 2. Generate Image using Flux Schnell
-    // Note: We destructure { data } because the modern SDK wraps the result
+    // Extract the "smart" prompt from Llama
+    const enhancedPrompt = llmResponse.data.choices[0].message.content.trim();
+    console.log("Original:", userPrompt);
+    console.log("Llama Enhanced:", enhancedPrompt);
+
+    // STEP 2: GENERATE THE IMAGE USING THE SMART PROMPT
     const { data }: any = await fal.subscribe("fal-ai/flux/schnell", {
       input: {
-        prompt: prompt,
+        prompt: enhancedPrompt,
         image_size: "square_hd",
         num_inference_steps: 4,
-        output_format: "jpeg", // Must be jpeg or png for this model
+        output_format: "jpeg",
       },
       logs: true,
     });
 
-    // 3. Safety Check: Verify the image array exists
-    if (!data || !data.images || data.images.length === 0) {
-      console.error("FAL.AI returned no images:", data);
-      throw new Error("AI failed to return an image. It might have been flagged.");
-    }
-
     const generatedImageUrl = data.images[0].url;
-    console.log("Successfully generated:", generatedImageUrl);
 
-    // 4. Record to Firestore Global Feed
+    // STEP 3: LOG TO FIRESTORE
     if (userId && userId !== "undefined") {
-      try {
-        await addDoc(collection(db, "global_feed"), {
-          userId: userId,
-          prompt: prompt,
-          imageUrl: generatedImageUrl,
-          createdAt: new Date().toISOString(),
-        });
-      } catch (dbError) {
-        console.error("Firestore logging failed (non-critical):", dbError);
-      }
+      await addDoc(collection(db, "global_feed"), {
+        userId,
+        originalPrompt: userPrompt,
+        enhancedPrompt: enhancedPrompt,
+        imageUrl: generatedImageUrl,
+        createdAt: new Date().toISOString(),
+      });
     }
 
-    // 5. Return success to the frontend
     return NextResponse.json({ 
       imageUrl: generatedImageUrl, 
+      enhancedPrompt, // We send this back so your UI can show the "Magic"
       success: true 
     });
 
   } catch (error: any) {
-    console.error("CRITICAL GENERATION ERROR:", error);
-    
-    // Check for specific 401 Unauthorized errors
-    if (error.status === 401) {
-      return NextResponse.json(
-        { error: "Invalid Fal.ai API Key. Check your environment variables." },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: error.message || "The AI spirits are busy. Try again." },
-      { status: 500 }
-    );
+    console.error("Workflow Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

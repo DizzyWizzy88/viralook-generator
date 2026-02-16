@@ -4,19 +4,16 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'replicate.delivery',
+        hostname: 'fal.media',
       },
       {
         protocol: 'https',
-        hostname: 'pbxt.replicate.delivery',
+        hostname: 'v3.fal.media',
       },
+      // You can keep picsum for testing or remove it too
       {
         protocol: 'https',
         hostname: 'picsum.photos',
-      },
-      {
-        protocol: 'https',
-        hostname: 'oaidalleapiprodscus.blob.core.windows.net',
       },
     ],
   },
