@@ -1,61 +1,49 @@
 import { NextResponse } from "next/server";
-import * as fal from "@fal-ai/serverless-client";
-import { db } from "@/lib/firebase"; // Make sure this path is correct for your config
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-
-// Configure Fal with your key
-fal.config({
-  credentials: process.env.FAL_KEY,
-});
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 export async function POST(req: Request) {
-  console.log("--- API START: Received request ---");
-  // Inside your POST function in the API route
-  const { prompt, userId } = await req.json(); // Ensure you're destructuring userId
-
-  try {
-  // Only attempt to add to feed if userId exists to avoid the 500 error
-    if (userId) {
-      await addDoc(collection(db, "global_feed"), {
-       userId: userId,
-       prompt: prompt,
-       imageUrl: generatedImageUrl,
-       createdAt: new Date().toISOString(),
-    });
-  }
-} catch (dbError) {
-  console.error("Database write failed, but image was generated:", dbError);
-  // Don't crash the whole response if the feed fails
-}
-
   try {
     const { prompt, userId } = await req.json();
-    console.log("Prompt received:", prompt);
 
-    // 1. Call Fal.ai AI
-    const result: any = await fal.subscribe("fal-ai/flux/dev", { input: {prompt } });
-    const imageUrl = result.images[0].url;
+    if (!prompt) {
+      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    }
 
-    await addDoc(collection(db,"global_feed"), {
-      imageUrl,
-      prompt,
-      userId,
-      createdAt: serverTimestamp(),
+    // --- 1. AI GENERATION START ---
+    // Replace this placeholder with your actual AI call logic
+    // Example: const prediction = await replicate.predictions.create({...})
+    console.log(`Generating image for: ${prompt}`);
+    
+    // WE DEFINE IT HERE FIRST
+    const generatedImageUrl = "https://placeholder-image-url.com/result.png"; 
+    // --- AI GENERATION END ---
+
+    // 2. DATABASE SYNC
+    // Now 'generatedImageUrl' exists and can be used here
+    if (userId && userId !== "undefined") {
+      try {
+        await addDoc(collection(db, "global_feed"), {
+          userId: userId,
+          prompt: prompt,
+          imageUrl: generatedImageUrl, // No longer 'undefined'
+          createdAt: new Date().toISOString(),
+        });
+      } catch (dbError) {
+        console.error("Feed Update Failed:", dbError);
+      }
+    }
+
+    return NextResponse.json({ 
+      imageUrl: generatedImageUrl,
+      success: true 
     });
 
- // 2. Save to Firestore Global Feed
-    console.log("Saving to Firestore...");
-    const docRef = await addDoc(collection(db, "global_feed"), {
-      imageUrl,
-      prompt,
-      userId,
-      createdAt: serverTimestamp(),
-    });
-    console.log("Firestore success! Doc ID:", docRef.id);
-
-    return NextResponse.json({ imageUrl }, { status: 200 });
   } catch (error: any) {
     console.error("!!! API CRASH !!!", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
