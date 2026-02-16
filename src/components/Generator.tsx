@@ -6,7 +6,7 @@ import { getFirebaseDb, getFirebaseAuth } from '@/lib/firebase';
 import { doc, updateDoc, increment, getDoc, setDoc } from 'firebase/firestore';
 import { Sparkles, Zap, AlertCircle, Download, RefreshCw } from 'lucide-react';
 
-const VERCEL_API_URL = "https://viralook-generator.vercel.app/api/generate";
+const VERCEL_API_URL = "/api/generate";
 
 export default function Generator() {
   const [prompt, setPrompt] = useState("");
