@@ -2,10 +2,19 @@
 
 import React, { useState } from 'react';
 import { useSummoningSequence } from '@/hooks/useSummoningSequence';
-import { getFirebaseDb, getFirebaseAuth } from '@/lib/firebase';
-import { doc, updateDoc, increment, getDoc, setDoc } from 'firebase/firestore';
-import { Sparkles, Zap, AlertCircle, Download, RefreshCw } from 'lucide-react';
+import { db, getFirebaseAuth } from '@/lib/firebase';
+import { 
+  doc, 
+  updateDoc, 
+  increment, 
+  getDoc, 
+  setDoc, 
+  collection, 
+  addDoc 
+} from 'firebase/firestore';
+import { Sparkles, Zap, AlertCircle, RefreshCw } from 'lucide-react';
 
+// Relative path fixes the CORS issue across preview/production URLs
 const VERCEL_API_URL = "/api/generate";
 
 export default function Generator() {
@@ -22,7 +31,6 @@ export default function Generator() {
     setError(null);
     setIsGenerating(true);
 
-    const db = getFirebaseDb();
     const auth = getFirebaseAuth();
     const user = auth.currentUser;
 
@@ -32,40 +40,38 @@ export default function Generator() {
       return;
     }
 
-
     try {
+      // 1. Fetch or Create User Document
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       
-      let userData; // Use 'let' for proper scoping
+      let userData;
 
       if (!userSnap.exists()) {
-        console.log("Document missing. Creating default for UID:", user.uid);
-        const defaultData = {
+        console.log("Debug - Document missing. Creating for UID:", user.uid);
+        userData = {
           credits: 2,
           email: user.email || "",
           isUnlimited: false,
           createdAt: new Date().toISOString()
         };
-        await setDoc(userRef, defaultData);
-        userData = defaultData;
+        await setDoc(userRef, userData);
       } else {
         userData = userSnap.data();
       }
 
-      // Force credit check as a number
+      // 2. Credit Validation
       const currentCredits = Number(userData?.credits || 0);
-
       if (!userData?.isUnlimited && currentCredits <= 0) {
         setError("OUT OF CREDITS");
         setIsGenerating(false);
         return;
       }
 
-      // Start the visual summoning sequence
+      // 3. Start Visual Sequence
       startSummoning();
 
-      // 3. API Call
+      // 4. API Call to Image Generator
       const response = await fetch(VERCEL_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,12 +81,26 @@ export default function Generator() {
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        throw new Error(data.error || "Generation failed");
+        throw new Error(data.error || "GENERATION FAILED");
       }
 
-      // 4. Success - Deduct credit
+      // 5. Success - Deduct Credit
       if (!userData?.isUnlimited) {
         await updateDoc(userRef, { credits: increment(-1) });
+      }
+
+      // 6. Add to Global Feed (Fixed userId undefined error)
+      try {
+        await addDoc(collection(db, "global_feed"), {
+          userId: user.uid,
+          prompt: prompt,
+          imageUrl: data.imageUrl,
+          createdAt: new Date().toISOString(),
+          userName: user.displayName || "Anonymous Creator"
+        });
+      } catch (feedErr) {
+        console.error("Feed Error (Non-Critical):", feedErr);
+        // We don't stop the UI if just the feed fails
       }
 
       setResultImage(data.imageUrl);
