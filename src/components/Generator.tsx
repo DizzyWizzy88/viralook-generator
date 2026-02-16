@@ -33,23 +33,26 @@ export default function Generator() {
     }
 
     try {
-      // 1. Fetch fresh data directly from Firestore
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       
+      // If the document doesn't exist, we create a basic one on the fly
       if (!userSnap.exists()) {
-        setError("USER DATA NOT FOUND");
-        setIsGenerating(false);
-        return;
+        console.log("Document missing. Creating default for UID:", user.uid);
+        const defaultData = {
+          credits: 2,
+          email: user.email || "",
+          isUnlimited: false,
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(userRef, defaultData);
+        // Continue with the newly created data
+        var userData = defaultData;
+      } else {
+        var userData = userSnap.data();
       }
 
-      const userData = userSnap.data();
-      
-      // CRITICAL FIX: Force the credits to be a Number
-      const currentCredits = Number(userData?.credits);
-      console.log("Debug - Current UID:", user.uid);
-      console.log("Debug - Raw Credits from DB:", userData?.credits);
-      console.log("Debug - Processed Credits:", currentCredits);
+      const currentCredits = Number(userData?.credits || 0);
 
       if (!userData?.isUnlimited && currentCredits <= 0) {
         setError("OUT OF CREDITS");
@@ -57,9 +60,8 @@ export default function Generator() {
         return;
       }
 
-      // 2. Start Visual Sequence
       startSummoning();
-
+      // ... rest of your fetch code ...
       // 3. API Call
       const response = await fetch(VERCEL_API_URL, {
         method: "POST",
