@@ -29,7 +29,7 @@ export async function POST(req: Request) {
         prompt: prompt, // Dynamic prompt from user
         image_size: "square_hd",
         num_inference_steps: 4,
-        output_format: "webp",
+        output_format: "jpeg",
       },
       logs: true,
     });
