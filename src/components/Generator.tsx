@@ -14,7 +14,6 @@ import {
 } from 'firebase/firestore';
 import { Sparkles, Zap, AlertCircle, RefreshCw } from 'lucide-react';
 
-// Relative path prevents CORS blocking on different Vercel deployment URLs
 const VERCEL_API_URL = "/api/generate";
 
 export default function Generator() {
@@ -41,14 +40,13 @@ export default function Generator() {
     }
 
     try {
-      // 1. Fetch or Auto-Create User Document to prevent 'User Data Not Found'
+      // 1. Fetch or Auto-Create User Document
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       
       let userData;
 
       if (!userSnap.exists()) {
-        console.log("Auto-creating missing user document for UID:", user.uid);
         userData = {
           credits: 2,
           email: user.email || "",
@@ -60,7 +58,7 @@ export default function Generator() {
         userData = userSnap.data();
       }
 
-      // 2. Mathematical Credit Validation
+      // 2. Credit Validation
       const currentCredits = Number(userData?.credits || 0);
       if (!userData?.isUnlimited && currentCredits <= 0) {
         setError("OUT OF CREDITS");
@@ -71,26 +69,30 @@ export default function Generator() {
       // 3. Start Visual Sequence
       startSummoning();
 
-      // 4. API Call with Relative URL (CORS Safe)
-
-      // Inside Generator.tsx
+      // 4. API Call - Data is declared here in the main try-block scope
       const response = await fetch(VERCEL_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           prompt, 
-          userId: user.uid // Ensure this matches what the API expects
-  }),
-});
+          userId: user.uid 
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "GENERATION FAILED");
+      }
 
       // 5. Success - Deduct Credit
       if (!userData?.isUnlimited) {
         await updateDoc(userRef, { credits: increment(-1) });
       }
 
-      // 6. Global Feed Guard: Prevents 'undefined' userId error
+      // 6. Global Feed Guard (Data and User are now fully accessible here)
       try {
-        if (user && user.uid) {
+        if (user && user.uid && data.imageUrl) {
           await addDoc(collection(db, "global_feed"), {
             userId: user.uid,
             prompt: prompt,
