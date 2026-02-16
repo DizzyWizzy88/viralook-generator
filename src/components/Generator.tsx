@@ -72,17 +72,16 @@ export default function Generator() {
       startSummoning();
 
       // 4. API Call with Relative URL (CORS Safe)
+
+      // Inside Generator.tsx
       const response = await fetch(VERCEL_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || data.error) {
-        throw new Error(data.error || "GENERATION FAILED");
-      }
+        body: JSON.stringify({ 
+          prompt, 
+          userId: user.uid // Ensure this matches what the API expects
+  }),
+});
 
       // 5. Success - Deduct Credit
       if (!userData?.isUnlimited) {

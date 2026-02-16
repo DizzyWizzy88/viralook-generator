@@ -10,6 +10,24 @@ fal.config({
 
 export async function POST(req: Request) {
   console.log("--- API START: Received request ---");
+  // Inside your POST function in the API route
+  const { prompt, userId } = await req.json(); // Ensure you're destructuring userId
+
+  try {
+  // Only attempt to add to feed if userId exists to avoid the 500 error
+    if (userId) {
+      await addDoc(collection(db, "global_feed"), {
+       userId: userId,
+       prompt: prompt,
+       imageUrl: generatedImageUrl,
+       createdAt: new Date().toISOString(),
+    });
+  }
+} catch (dbError) {
+  console.error("Database write failed, but image was generated:", dbError);
+  // Don't crash the whole response if the feed fails
+}
+
   try {
     const { prompt, userId } = await req.json();
     console.log("Prompt received:", prompt);
