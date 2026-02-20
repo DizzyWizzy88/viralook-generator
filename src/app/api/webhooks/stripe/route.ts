@@ -6,7 +6,9 @@ import Stripe from "stripe";
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = headers().get("Stripe-Signature") as string;
+  const headerPayload = await headers();
+  const signature = headerList.get("Stripe-Signature") as string;
+
   const adminDb = getAdminDb();
 
   let event: Stripe.Event;
