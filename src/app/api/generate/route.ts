@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'; // Add this at the very top of your route file
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { stripe } from "@/lib/server/stripe";
 import { fal } from "@fal-ai/client";
 
@@ -33,12 +33,13 @@ async function enhancePromptWithLlama(userPrompt: string) {
   }
 }
 
-import { getAdminDb } from "@/lib/firebaseAdmin";
 export async function POST(req: Request) {
-  const db = getAdminDb();
+  const adminDb = getAdminDb();
   try {
-    if (!db) {
-    return new Response("Database not available", { status: 500 });
+    if (!adminDb) {
+    console.error("Firebase Admin DB not initialized");
+    return new Response("Internal Server Error", { status: 500 });
+
   }
     const { prompt, userId, userName } = await req.json();
 
