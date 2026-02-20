@@ -8,14 +8,15 @@ export async function POST(req: Request) {
     if (!priceId) {
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
     }
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://viralook-generator.vercel.app';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription", 
       // Fallback to localhost if NEXT_PUBLIC_BASE_URL isn't set in Vercel yet
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://' + process.env.VERCEL_URL}/pricing`,
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/pricing`,
       metadata: { 
         userId: userId || "anonymous", 
         email: userEmail || "no-email" 
