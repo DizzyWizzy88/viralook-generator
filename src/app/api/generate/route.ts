@@ -1,11 +1,9 @@
-export const dynamic = 'force-dynamic'; // Add this at the very top of your route file
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { stripe } from "@/lib/server/stripe";
 import { fal } from "@fal-ai/client";
 
-// Initialize Llama 3.1 via an Inference API (like Groq, OpenAI, or Fireworks)
-// For this example, we'll assume a standard fetch to your AI provider
+// Llama 3.1 Prompt Expansion Logic
 async function enhancePromptWithLlama(userPrompt: string) {
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -35,36 +33,65 @@ async function enhancePromptWithLlama(userPrompt: string) {
 
 export async function POST(req: Request) {
   const adminDb = getAdminDb();
+  
   try {
     if (!adminDb) {
-    console.error("Firebase Admin DB not initialized");
-    return new Response("Internal Server Error", { status: 500 });
+      console.error("Firebase Admin DB not initialized");
+      return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
+    }
 
-  }
-    const { prompt, userId, userName } = await req.json();
+    const { prompt, userId, userName, userEmail } = await req.json();
 
     if (!prompt || !userId) {
       return NextResponse.json({ error: "Missing prompt or userId" }, { status: 400 });
     }
 
-    // 1. Verify User & Credits (Server-side safety)
     const userRef = adminDb.collection("users").doc(userId);
-    const userDoc = await userRef.get();
-    
-    if (!userDoc.exists) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    // 1. ATOMIC TRANSACTION: Handles New Users (2 credits) & Deductions
+    const transactionResult = await adminDb.runTransaction(async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+
+      // Handle New User: Give 2 credits, deduct 1 for this request
+      if (!userDoc.exists) {
+        const newUser = {
+          email: userEmail || "No Email Provided",
+          credits: 1, // Start with 2, but use 1 immediately
+          createdAt: new Date().toISOString(),
+        };
+        transaction.set(userRef, newUser);
+        return { canGenerate: true };
+      }
+
+      const userData = userDoc.data();
+      const currentCredits = userData?.credits || 0;
+
+      // Handle Out of Credits
+      if (currentCredits < 1 && !userData?.isUnlimited) {
+        return { canGenerate: false };
+      }
+
+      // Deduct 1 Credit
+      const updateData = userData?.isUnlimited ? {} : { credits: currentCredits - 1 };
+      if (!userData?.isUnlimited) {
+        transaction.update(userRef, updateData);
+      }
+      
+      return { canGenerate: true };
+    });
+
+    // 2. Redirect Check
+    if (!transactionResult.canGenerate) {
+      return NextResponse.json(
+        { error: "Out of credits", shouldRedirect: true }, 
+        { status: 403 }
+      );
     }
 
-    const userData = userDoc.data();
-    if (!userData?.isUnlimited && (userData?.credits || 0) <= 0) {
-      return NextResponse.json({ error: "Insufficient credits" }, { status: 402 });
-    }
-
-    // 2. Enhance the prompt using Llama 3.1
+    // 3. AI Workflow: Enhance -> Generate
     const enhancedPrompt = await enhancePromptWithLlama(prompt);
 
-    // 3. Generate Image with Fal.ai (Flux.1 Schnell)
-    const result: any = await fal.subscribe("fal-ai/flux/schnell", {
+    const falResult: any = await fal.subscribe("fal-ai/flux/schnell", {
       input: {
         prompt: enhancedPrompt,
         image_size: "landscape_4_3",
@@ -73,22 +100,18 @@ export async function POST(req: Request) {
       logs: true,
     });
 
-    const imageUrl = result.images[0].url;
+    const imageUrl = falResult.images[0].url;
 
-    // 4. Save to Global Feed (Securely)
-    // We do this BEFORE returning to the user to ensure it's logged
-    const feedEntry = {
+    // 4. Record in Global Feed
+    await adminDb.collection("global_feed").add({
       userId,
       userName: userName || "Anonymous Creator",
       originalPrompt: prompt,
-      enhancedPrompt: enhancedPrompt,
-      imageUrl: imageUrl,
+      enhancedPrompt,
+      imageUrl,
       createdAt: new Date().toISOString(),
-    };
+    });
 
-    await adminDb.collection("global_feed").add(feedEntry);
-
-    // 5. Return data to Frontend
     return NextResponse.json({
       imageUrl,
       enhancedPrompt,
@@ -97,6 +120,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("Route Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Generation failed" }, { status: 500 });
   }
 }
