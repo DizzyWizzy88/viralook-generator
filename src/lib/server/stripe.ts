@@ -9,7 +9,7 @@ if (!STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16.clover', // Use a recent stable API version
+    apiVersion: '2025-12-15.clover', // Use a recent stable API version
 });
 
 // Define the plans you offer for easy reference
