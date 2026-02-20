@@ -86,11 +86,13 @@ export default function DashboardContent() {
       <main className="max-w-4xl mx-auto flex flex-col gap-12">
         
         {/* 1. Generator Card */}
-        <section className="w-full bg-zinc-900/40 border border-zinc-800/50 rounded-[2rem] p-1 shadow-2xl">
-          <div className="bg-black/20 rounded-[1.8rem] p-6">
-            <Generator />
-          </div>
-        </section>
+
+       {/* Find the Generator section and update it to this: */}
+       <section className="w-full bg-zinc-900/40 border border-zinc-800/50 rounded-[2rem] p-1 shadow-2xl">
+         <div className="bg-black/20 rounded-[1.8rem] p-6">
+           <Generator />
+         </div>
+       </section>
         
         {/* 2. Pricing & Upgrades Section */}
         <section className="w-full py-4">
@@ -98,7 +100,7 @@ export default function DashboardContent() {
             <div className="h-[1px] flex-1 bg-zinc-800"></div>
             <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">
               Membership Plans
-            </h2>
+              </h2>
             <div className="h-[1px] flex-1 bg-zinc-800"></div>
           </div>
           <PricingTable />
