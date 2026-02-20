@@ -27,6 +27,7 @@ export default function Generator() {
   // Auth State
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isLegendUser, setIsLegendUser] = useState(false);
 
   // Generation State
   const [prompt, setPrompt] = useState("");
@@ -46,8 +47,16 @@ export default function Generator() {
   // Listen for Auth changes
   useEffect(() => {
     const auth = getFirebaseAuth();
-    return onAuthStateChanged(auth, (currentUser) => {
+    return onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        // Pre-fetch status for UI labels
+        const snap = await getDoc(doc(db, "users", currentUser.uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsLegendUser(data?.isUnlimited === true || data?.tier === 'legend');
+        }
+      }
       setAuthLoading(false);
     });
   }, []);
@@ -86,7 +95,9 @@ export default function Generator() {
       }
 
       const userData = userSnap.data();
-      if (!userData?.isUnlimited && (userData?.credits || 0) <= 0) {
+      const isLegend = userData?.isUnlimited === true || userData?.tier === 'legend';
+
+      if (!isLegend && (userData?.credits || 0) <= 0) {
         throw new Error("OUT OF CREDITS");
       }
 
@@ -115,11 +126,10 @@ export default function Generator() {
       setEnhancedPrompt(data.enhancedPrompt);
       completeSummoning();
 
-      // 5. Success - Deduct Credit
-      if (!userData?.isUnlimited) {
+      // 5. Success - Deduct Credit only if NOT a legend
+      if (!isLegend) {
         await updateDoc(userRef, { credits: increment(-1) });
-      }
-      
+      }      
     } catch (err: any) {
       console.error("Summoning error:", err);
       const msg = err.message || "THE SPIRITS ARE SILENT...";
@@ -129,8 +139,6 @@ export default function Generator() {
       setIsGenerating(false);
     }
   };
-
-  // --- RENDERING LOGIC ---
 
   if (authLoading) {
     return (
@@ -177,8 +185,10 @@ export default function Generator() {
         
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center gap-2 text-zinc-600">
-            <Zap size={14} className={isGenerating ? "animate-pulse text-yellow-400" : ""} />
-            <span className="text-[9px] font-black tracking-widest uppercase">1 Credit Per Summon</span>
+            <Zap size={14} className={isGenerating ? "animate-pulse text-yellow-400" : (isLegendUser ? "text-cyan-400" : "")} />
+            <span className="text-[9px] font-black tracking-widest uppercase">
+              {isLegendUser ? "Unlimited Summoning" : "1 Credit Per Summon"}
+            </span>
           </div>
 
           <button
