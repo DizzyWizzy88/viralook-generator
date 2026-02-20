@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'; // Add this at the very top of your route file
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { stripe } from "@/lib/server/stripe";
