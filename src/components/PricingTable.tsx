@@ -91,7 +91,7 @@ export default function PricingTable() {
           </ul>
         </div>
         <button
-          onClick={() => handlePurchase('price_1SlG4r0ZcMLctEm4Nyh0rswZ', 'LEGEND')}
+          onClick={() => handlePurchase('price_1SlG4r0ZcMLctEm4Nyh0rswZ', 'VIRAL LEGEND')}
           disabled={!!loadingPlan}
           className="w-full mt-8 bg-cyan-500 text-black py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg flex justify-center items-center"
         >
