@@ -11,7 +11,12 @@ export default function PricingTable() {
       price: "$0",
       interval: "",
       description: "Perfect for testing the waters.",
-      features: ["2 One-time Credits", "Public Feed Only", "Standard Speed"],
+      features: [
+        "2 One-time Credits",
+        "Llama Basic Expansion",
+        "Public Feed Only",
+        "Standard Speed"
+      ],
       buttonText: "Get Started Free",
       highlight: false,
     },
@@ -21,7 +26,12 @@ export default function PricingTable() {
       price: "$19.99",
       interval: "/mo",
       description: "Standard recurring power for creators.",
-      features: ["500 Credits/mo", "Public Feed", "Fast Generation"],
+      features: [
+        "500 Credits/mo",
+        "Llama Expert Prompts",
+        "Public Feed",
+        "Fast Generation Speed"
+      ],
       buttonText: "Subscribe Pro",
       highlight: false,
     },
@@ -31,7 +41,12 @@ export default function PricingTable() {
       price: "$39.99",
       interval: "/mo",
       description: "Ultimate recurring tier for professionals.",
-      features: ["Unlimited Credits", "Private Mode (Hidden)", "Priority GPU"],
+      features: [
+        "Unlimited Credits",
+        "Llama Creative Director",
+        "Private Mode (Hidden)",
+        "Priority GPU Access"
+      ],
       buttonText: "Subscribe Legend",
       highlight: true,
     }
@@ -89,7 +104,7 @@ export default function PricingTable() {
 
           <button 
             onClick={() => handleCheckout(plan.priceId)} 
-            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 ${
               plan.highlight ? 'bg-blue-600 text-white shadow-lg' : 'bg-black text-white'
             }`}
           >
