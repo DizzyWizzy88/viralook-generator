@@ -1,3 +1,5 @@
+'use client';
+
 import { useRouter } from 'next/navigation';
 
 export default function PricingTable() {
@@ -6,7 +8,7 @@ export default function PricingTable() {
   const plans = [
     {
       name: "Starter",
-      priceId: null, // No Stripe ID
+      priceId: null, // $0 plan - internal logic only
       credits: 2,
       price: "$0",
       interval: "",
@@ -16,7 +18,7 @@ export default function PricingTable() {
     },
     {
       name: "Pro Monthly",
-      priceId: "price_1SlG310ZcMLctEm4DPIgTkyR", // Replace with your $19.99 Recurring ID
+      priceId: "price_1SlG4r0ZcMLctEm4Nyh0rswZ", // Your 19.99 Recurring ID
       credits: "Unlimited", 
       price: "$19.99",
       interval: "/mo",
@@ -26,17 +28,18 @@ export default function PricingTable() {
     },
     {
       name: "Viral Legend",
-      priceId: "price_1SlG4r0ZcMLctEm4Nyh0rswZ", // Replace with your $39.99 Recurring ID
-      credits: "Unlimited+", // Or a higher priority tier
+      priceId: "price_YOUR_39_99_RECURRING_ID", // REPLACE THIS with your 39.99 Recurring ID
+      credits: "Unlimited+", 
       price: "$39.99",
       interval: "/mo",
       description: "Ultimate recurring tier for professionals.",
       buttonText: "Subscribe Legend",
       highlight: true,
     }
- price_1SlG4r0ZcMLctEm4Nyh0rswZ ];
+  ];
 
   const handleCheckout = async (priceId: string | null) => {
+    // If no priceId, it's the free plan, just go to dashboard
     if (!priceId) {
       router.push('/dashboard');
       return;
@@ -48,20 +51,26 @@ export default function PricingTable() {
         body: JSON.stringify({ priceId }),
         headers: { "Content-Type": "application/json" },
       });
+      
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("No checkout URL returned");
+      }
     } catch (err) {
       console.error("Checkout error:", err);
     }
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4 py-12">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4 py-12 text-black">
       {plans.map((plan) => (
         <div 
           key={plan.name} 
-          className={`flex flex-col p-8 rounded-3xl border-2 transition-all ${
-            plan.highlight ? 'border-blue-600 shadow-2xl scale-105 bg-white' : 'border-gray-200 bg-gray-50'
+          className={`flex flex-col p-8 rounded-3xl border-2 transition-all bg-white ${
+            plan.highlight ? 'border-blue-600 shadow-2xl scale-105' : 'border-gray-200'
           }`}
         >
           {plan.highlight && (
@@ -76,13 +85,16 @@ export default function PricingTable() {
           </div>
           <p className="text-gray-600 mb-8">{plan.description}</p>
           <ul className="space-y-4 mb-8 flex-grow">
-            <li className="flex items-center gap-2">✅ <strong>{plan.credits}</strong> Generations</li>
-            <li className="flex items-center gap-2">✅ Llama 3.1 Expansion</li>
+            <li className="flex items-center gap-2 text-sm font-medium">✅ {plan.credits} AI Generations</li>
+            <li className="flex items-center gap-2 text-sm font-medium">✅ Llama 3.1 Prompt Expansion</li>
+            <li className="flex items-center gap-2 text-sm font-medium">✅ Priority Processing</li>
           </ul>
           <button 
             onClick={() => handleCheckout(plan.priceId)}
             className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-              plan.highlight ? 'bg-blue-600 text-white' : 'bg-black text-white'
+              plan.highlight 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-black text-white hover:bg-gray-800'
             }`}
           >
             {plan.buttonText}
