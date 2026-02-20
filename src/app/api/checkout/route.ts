@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription", 
       // Fallback to localhost if NEXT_PUBLIC_BASE_URL isn't set in Vercel yet
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://' + process.env.VERCEL_URL}/dashboard?success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://' + process.env.VERCEL_URL}/pricing`,
       metadata: { 
         userId: userId || "anonymous", 
