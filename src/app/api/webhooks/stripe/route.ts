@@ -6,9 +6,10 @@ import Stripe from "stripe";
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const headerPayload = await headers();
-  const signature = headerList.get("Stripe-Signature") as string;
-
+  
+  // Await the headers and get the signature in one clean step
+  const signature = (await headers()).get("Stripe-Signature") as string;
+  
   const adminDb = getAdminDb();
 
   let event: Stripe.Event;
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
+    console.error(`Webhook Error: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
@@ -27,12 +29,15 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const userId = session.metadata?.userId;
-    const priceId = session.line_items?.data[0]?.price?.id || session.subscription ? 
-      (await stripe.subscriptions.retrieve(session.subscription as string)).items.data[0].price.id : null;
+    // Get Price ID from the session or the subscription
+    const priceId = session.line_items?.data[0]?.price?.id || session.subscription;
 
-    if (!userId) return NextResponse.json({ error: "No userId in metadata" }, { status: 400 });
+    if (!userId) {
+      console.error("No userId found in session metadata");
+      return NextResponse.json({ error: "No userId" }, { status: 400 });
+    }
 
-    // Define tier mapping based on your Stripe Price IDs
+    // Tier mapping
     let tier = "starter";
     if (priceId === "price_1SlG4r0ZcMLctEm4Nyh0rswZ") {
       tier = "pro";
@@ -40,15 +45,13 @@ export async function POST(req: Request) {
       tier = "legend";
     }
 
-    // Update Firestore with the new tier and unlimited status
+    // Update Firestore
     await adminDb!.collection("users").doc(userId).set({
       tier: tier,
-      isUnlimited: true, // Pro and Legend both get unlimited in our logic
-      lastPaymentStatus: "paid",
       updatedAt: new Date().toISOString(),
     }, { merge: true });
 
-    console.log(`User ${userId} upgraded to ${tier}`);
+    console.log(`✅ User ${userId} successfully upgraded to ${tier}`);
   }
 
   return NextResponse.json({ received: true });
