@@ -4,48 +4,33 @@ import { redirect } from "next/navigation";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export default async function DashboardPage() {
-  // Use your actual auth logic here to get this ID
+  // Replace with your actual auth logic (e.g. from cookies or session)
   const userId = "XeS5zHvgAch5jp9QDCY7CJ9NjH2"; 
 
-  let userData: any = null;
-  try {
-    const adminDb = getAdminDb();
-    if (adminDb) {
-      const userDoc = await adminDb.collection("users").doc(userId).get();
-      userData = userDoc.data();
-    }
-  } catch (e) {
-    console.error("Database fetch failed", e);
-  }
+  const adminDb = getAdminDb();
+  if (!adminDb) return <div>Database Connection Error</div>;
 
-  // LOGIC BASED ON YOUR SCREENSHOT
-  const isUnlimited = userData?.isUnlimited === true;
-  const userTier = userData?.tier || 'starter';
+  const userDoc = await adminDb.collection("users").doc(userId).get();
+  const userData = userDoc.data();
+
+  // Mapping to your Firestore screenshot:
+  const isLegend = userData?.isUnlimited === true || userData?.tier === 'legend';
   const credits = userData?.credits ?? 0;
-
-  const ui = {
-    legend: { label: "Viral Legend", display: "Unlimited", color: "text-blue-500" },
-    pro: { label: "Pro Monthly", display: "500 / mo", color: "text-emerald-500" },
-    starter: { label: `${credits} Credits`, color: "text-white" }
-  };
-
-  // If isUnlimited is true, we force the 'legend' display
-  const current = isUnlimited ? ui.legend : (ui[userTier as keyof typeof ui] || ui.starter);
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-black mb-8 uppercase italic">Studio Dashboard</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#111] border border-white/10 p-8 rounded-3xl">
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Usage Plan</p>
-            <p className="text-2xl font-bold">{isUnlimited ? "Unlimited Legend" : "Standard Plan"}</p>
+      <div className="max-w-4xl mx-auto border border-white/10 rounded-3xl p-8 bg-zinc-900/50">
+        <h1 className="text-2xl font-black mb-6 italic uppercase tracking-tighter">Studio</h1>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-6 bg-black rounded-2xl border border-white/5">
+            <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Status</p>
+            <p className="text-xl font-bold">{isLegend ? "Legend Member" : "Starter"}</p>
           </div>
-
-          <div className="bg-[#111] border border-white/10 p-8 rounded-3xl">
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Remaining Balance</p>
-            <p className={`text-4xl font-black ${current.color}`}>{current.display}</p>
+          <div className="p-6 bg-black rounded-2xl border border-white/5">
+            <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Balance</p>
+            <p className={`text-2xl font-black ${isLegend ? 'text-blue-500' : 'text-white'}`}>
+              {isLegend ? "UNLIMITED" : `${credits} Credits`}
+            </p>
           </div>
         </div>
       </div>
