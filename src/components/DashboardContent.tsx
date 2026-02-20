@@ -79,7 +79,7 @@ export default function DashboardContent() {
           </div>
         </div>
 
-        <CreditBadge credits={userData?.credits ?? 0} />
+        <CreditBadge/>
       </header>
 
       {/* MAIN CONTENT: Vertical Stack */}
