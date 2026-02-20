@@ -1,103 +1,94 @@
-"use client";
-
-import React, { useState } from 'react';
-import { getFirebaseAuth } from '@/lib/firebase';
-import { plans } from '@/lib/server/stripe'; // We'll use the names/prices from here
-import { Zap, Crown, Check, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function PricingTable() {
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const router = useRouter();
 
-  const handlePurchase = async (priceId: string, planName: string) => {
-    const auth = getFirebaseAuth();
-    const user = auth.currentUser;
+  const plans = [
+    {
+      name: "Starter",
+      priceId: null, // No Stripe ID
+      credits: 2,
+      price: "$0",
+      interval: "",
+      description: "Perfect for testing the waters.",
+      buttonText: "Get Started Free",
+      highlight: false,
+    },
+    {
+      name: "Pro Monthly",
+      priceId: "price_1SlG310ZcMLctEm4DPIgTkyR", // Replace with your $19.99 Recurring ID
+      credits: "Unlimited", 
+      price: "$19.99",
+      interval: "/mo",
+      description: "Standard recurring power for creators.",
+      buttonText: "Subscribe Pro",
+      highlight: false,
+    },
+    {
+      name: "Viral Legend",
+      priceId: "price_1SlG4r0ZcMLctEm4Nyh0rswZ", // Replace with your $39.99 Recurring ID
+      credits: "Unlimited+", // Or a higher priority tier
+      price: "$39.99",
+      interval: "/mo",
+      description: "Ultimate recurring tier for professionals.",
+      buttonText: "Subscribe Legend",
+      highlight: true,
+    }
+ price_1SlG4r0ZcMLctEm4Nyh0rswZ ];
 
-    if (!user) {
-      alert("PLEASE LOGIN TO UPGRADE");
+  const handleCheckout = async (priceId: string | null) => {
+    if (!priceId) {
+      router.push('/dashboard');
       return;
     }
 
-    setLoadingPlan(planName);
-
     try {
-      // We call a new API route we need to create: /api/checkout
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceId,
-          userId: user.uid,
-          email: user.email,
-        }),
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        body: JSON.stringify({ priceId }),
+        headers: { "Content-Type": "application/json" },
       });
-
-      const { url, error } = await response.json();
-
-      if (error) throw new Error(error);
-      
-      // Redirect to Stripe Checkout
-      if (url) window.location.href = url;
-      
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
     } catch (err) {
       console.error("Checkout error:", err);
-      alert("THE PORTAL FAILED TO OPEN. TRY AGAIN.");
-    } finally {
-      setLoadingPlan(null);
     }
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto p-4">
-      {/* PRO MONTHLY CARD */}
-      <div className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-8 flex flex-col justify-between hover:border-blue-500/50 transition-all">
-        <div>
-          <div className="flex items-center gap-2 mb-4 text-blue-400">
-            <Zap size={18} />
-            <span className="text-[10px] font-black tracking-widest uppercase">Entry Tier</span>
-          </div>
-          <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">Pro Monthly</h3>
-          <p className="text-4xl font-black mt-2 text-white">$19.99</p>
-          <ul className="mt-6 space-y-3">
-            <li className="flex items-center gap-2 text-zinc-400 text-sm"><Check size={14} className="text-blue-500" /> 100 Summoning Credits</li>
-            <li className="flex items-center gap-2 text-zinc-400 text-sm"><Check size={14} className="text-blue-500" /> High-Speed Flux Generation</li>
-            <li className="flex items-center gap-2 text-zinc-400 text-sm"><Check size={14} className="text-blue-500" /> Basic Llama Enhancement</li>
-          </ul>
-        </div>
-        <button
-          onClick={() => handlePurchase('price_1SlG310ZcMLctEm4DPIgTkyR', 'PRO')}
-          disabled={!!loadingPlan}
-          className="w-full mt-8 bg-white text-black py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-400 transition-all flex justify-center items-center"
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4 py-12">
+      {plans.map((plan) => (
+        <div 
+          key={plan.name} 
+          className={`flex flex-col p-8 rounded-3xl border-2 transition-all ${
+            plan.highlight ? 'border-blue-600 shadow-2xl scale-105 bg-white' : 'border-gray-200 bg-gray-50'
+          }`}
         >
-          {loadingPlan === 'PRO' ? <Loader2 className="animate-spin" /> : 'SELECT PRO'}
-        </button>
-      </div>
-
-      {/* VIRAL LEGEND CARD */}
-      <div className="relative bg-zinc-900/50 border-2 border-cyan-500/50 rounded-[2rem] p-8 flex flex-col justify-between overflow-hidden shadow-[0_0_40px_rgba(6,182,212,0.15)]">
-        <div className="absolute top-0 right-0 bg-cyan-500 text-black px-4 py-1 text-[8px] font-black uppercase tracking-widest rounded-bl-xl">
-          Popular
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-4 text-cyan-400">
-            <Crown size={18} />
-            <span className="text-[10px] font-black tracking-widest uppercase">Viral Tier</span>
+          {plan.highlight && (
+            <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full self-start mb-4">
+              BEST VALUE
+            </span>
+          )}
+          <h3 className="text-2xl font-bold">{plan.name}</h3>
+          <div className="my-6">
+            <span className="text-5xl font-black">{plan.price}</span>
+            <span className="text-gray-500 text-lg">{plan.interval}</span>
           </div>
-          <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">Viral Legend</h3>
-          <p className="text-4xl font-black mt-2 text-white">$49.99</p>
-          <ul className="mt-6 space-y-3 text-white">
-            <li className="flex items-center gap-2 text-sm"><Check size={14} className="text-cyan-400" /> UNLIMITED Summons</li>
-            <li className="flex items-center gap-2 text-sm"><Check size={14} className="text-cyan-400" /> Max Priority Llama 3.1</li>
-            <li className="flex items-center gap-2 text-sm"><Check size={14} className="text-cyan-400" /> Global Feed Spotlight</li>
+          <p className="text-gray-600 mb-8">{plan.description}</p>
+          <ul className="space-y-4 mb-8 flex-grow">
+            <li className="flex items-center gap-2">✅ <strong>{plan.credits}</strong> Generations</li>
+            <li className="flex items-center gap-2">✅ Llama 3.1 Expansion</li>
           </ul>
+          <button 
+            onClick={() => handleCheckout(plan.priceId)}
+            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+              plan.highlight ? 'bg-blue-600 text-white' : 'bg-black text-white'
+            }`}
+          >
+            {plan.buttonText}
+          </button>
         </div>
-        <button
-          onClick={() => handlePurchase('price_1SlG4r0ZcMLctEm4Nyh0rswZ', 'VIRAL LEGEND')}
-          disabled={!!loadingPlan}
-          className="w-full mt-8 bg-cyan-500 text-black py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg flex justify-center items-center"
-        >
-          {loadingPlan === 'LEGEND' ? <Loader2 className="animate-spin" /> : 'SELECT LEGEND'}
-        </button>
-      </div>
+      ))}
     </div>
   );
 }
