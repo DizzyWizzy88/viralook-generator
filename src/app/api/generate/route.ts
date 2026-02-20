@@ -2,9 +2,9 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { fal } from "@fal-ai/client";
-// Import the Transaction type specifically for TypeScript
 import { Transaction } from "firebase-admin/firestore";
 
+// Llama 3.1 Prompt Expansion via Groq
 async function enhancePromptWithLlama(userPrompt: string) {
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -49,12 +49,13 @@ export async function POST(req: Request) {
 
     const userRef = adminDb.collection("users").doc(userId);
 
-    // FIX: Explicitly type the transaction as 'Transaction'
+    // ATOMIC TRANSACTION: Handles New Users (2 credits) & Deductions
     const transactionResult = await adminDb.runTransaction(async (transaction: Transaction) => {
-      const userDoc = await transaction.get(userRef);
+      // Cast to 'any' to resolve the '.exists' TypeScript build error
+      const userDoc = (await transaction.get(userRef)) as any;
 
-      // New User Logic: Give 2 credits, use 1 immediately
       if (!userDoc.exists) {
+        // NEW USER: Start with 2 credits, deduct 1 for this generation
         const newUser = {
           email: userEmail || "No Email Provided",
           credits: 1, 
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
         return { canGenerate: false };
       }
 
-      // Deduct 1 Credit unless unlimited
+      // Deduct 1 Credit
       if (!userData?.isUnlimited) {
         transaction.update(userRef, { credits: currentCredits - 1 });
       }
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
 
     const imageUrl = falResult.images[0].url;
 
-    // Save to Feed
+    // Record in Global Feed
     await adminDb.collection("global_feed").add({
       userId,
       userName: userName || "Anonymous Creator",
