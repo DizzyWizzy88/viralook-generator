@@ -1,34 +1,48 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export const useSummoningSequence = () => {
   const [progress, setProgress] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState("INITIALIZING...");
+  const [currentMessage, setCurrentMessage] = useState("READY TO SUMMON");
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const messages = [
-    "ANALYZING VIBE...",
-    "SYNTHESIZING STYLE...",
-    "SUMMONING THE AI GODS...",
-    "FINALIZING PIXELS..."
-  ];
-
-  const startSummoning = useCallback(async () => {
+  const startSummoning = useCallback(() => {
+    // Clear any existing intervals
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    
     setProgress(0);
-    for (let i = 0; i < messages.length; i++) {
-      setCurrentMessage(messages[i]);
-      // Simulate progress steps
-      for (let p = 0; p < 25; p++) {
-        setProgress(prev => prev + 1);
-        await new Promise(r => setTimeout(r, 40)); 
-      }
-    }
-    setCurrentMessage("COMPLETE");
+    setCurrentMessage("INITIATING BRAINSCAN...");
+
+    // Create a smooth, non-linear progress simulation
+    intervalRef.current = setInterval(() => {
+      setProgress(prev => {
+        if (prev < 30) {
+          setCurrentMessage("EXPANDING PROMPT ARCHITECTURE...");
+          return prev + 1; // Slower start for Llama
+        }
+        if (prev < 70) {
+          setCurrentMessage("SUMMONING PIXELS FROM THE VOID...");
+          return prev + 0.5; // Medium speed for Flux
+        }
+        if (prev < 95) {
+          setCurrentMessage("FINALIZING TEXTURES...");
+          return prev + 0.2; // Slow down at the end so it doesn't hit 100 too fast
+        }
+        return prev;
+      });
+    }, 100);
+  }, []);
+
+  const completeSummoning = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setCurrentMessage("MANIFESTED SUCCESSFULLY");
     setProgress(100);
   }, []);
 
-  const resetSummoning = useCallback(() => {
+  const failSummoning = useCallback((reason: string) => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setCurrentMessage(reason.toUpperCase());
     setProgress(0);
-    setCurrentMessage("READY TO SUMMON");
   }, []);
 
-  return { progress, currentMessage, startSummoning, resetSummoning };
+  return { progress, currentMessage, startSummoning, completeSummoning, failSummoning };
 };
