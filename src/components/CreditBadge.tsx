@@ -21,6 +21,7 @@ export default function CreditBadge() {
           if (doc.exists()) {
             const data = doc.data();
             setCredits(data.credits ?? 0);
+            const isLegendUser = data.isUnlimited === true || data.tier === "legend";
             setIsUnlimited(data.isUnlimited ?? false);
           }
           setLoading(false);
