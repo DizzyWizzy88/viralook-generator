@@ -44,13 +44,12 @@ export default function Generator() {
     failSummoning 
   } = useSummoningSequence();
 
-  // Listen for Auth changes
+  // Listen for Auth changes and pre-fetch Legend status
   useEffect(() => {
     const auth = getFirebaseAuth();
     return onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        // Pre-fetch status for UI labels
         const snap = await getDoc(doc(db, "users", currentUser.uid));
         if (snap.exists()) {
           const data = snap.data();
@@ -96,6 +95,9 @@ export default function Generator() {
 
       const userData = userSnap.data();
       const isLegend = userData?.isUnlimited === true || userData?.tier === 'legend';
+
+      // Update local state just in case it changed
+      setIsLegendUser(isLegend);
 
       if (!isLegend && (userData?.credits || 0) <= 0) {
         throw new Error("OUT OF CREDITS");
@@ -187,7 +189,11 @@ export default function Generator() {
           <div className="flex items-center gap-2 text-zinc-600">
             <Zap size={14} className={isGenerating ? "animate-pulse text-yellow-400" : (isLegendUser ? "text-cyan-400" : "")} />
             <span className="text-[9px] font-black tracking-widest uppercase">
-              {isLegendUser ? "Unlimited Summoning" : "1 Credit Per Summon"}
+              {isLegendUser ? (
+                <span className="text-cyan-400 italic">Unlimited Summoning</span>
+              ) : (
+                "1 Credit Per Summon"
+              )}
             </span>
           </div>
 
@@ -245,7 +251,7 @@ export default function Generator() {
           <div className="bg-zinc-900/30 rounded-2xl p-5 border border-white/5 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Creator</p>
-              <p className="text-[11px] text-zinc-400 font-medium">{user.displayName}</p>
+              <p className="text-[11px] text-zinc-400 font-medium">{user?.displayName}</p>
             </div>
             <a 
               href={resultImage} 
