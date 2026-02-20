@@ -40,7 +40,7 @@ export default function PricingTable() {
     {
       name: "Pro Monthly",
       id: "pro",
-      priceId: "price_1SlG4r0ZcMLctEm4Nyh0rswZ", 
+      priceId: "price_1SlG310ZcMLctEm4DPIgTkyR", 
       price: "$19.99",
       interval: "/mo",
       features: ["500 Credits/mo", "Llama Expert Prompts", "Public Feed"],
