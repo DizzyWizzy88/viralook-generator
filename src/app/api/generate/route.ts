@@ -33,8 +33,13 @@ async function enhancePromptWithLlama(userPrompt: string) {
   }
 }
 
+import { getAdminDb } from "@/lib/firebaseAdmin";
 export async function POST(req: Request) {
+  const db = getAdminDb();
   try {
+    if (!db) {
+    return new Response("Database not available", { status: 500 });
+  }
     const { prompt, userId, userName } = await req.json();
 
     if (!prompt || !userId) {

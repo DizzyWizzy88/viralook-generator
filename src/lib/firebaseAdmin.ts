@@ -1,27 +1,31 @@
 import admin from "firebase-admin";
 
-// Use a helper to check if we're in a build environment or missing keys
-const serviceAccount = {
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  // The .replace() is vital for Vercel newline handling
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+const initAdmin = () => {
+  if (admin.apps.length > 0) return admin.app();
+
+  const serviceAccount = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  };
+
+  // Only init if we are NOT in the build worker
+  if (serviceAccount.projectId && serviceAccount.privateKey) {
+    return admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  }
+  
+  return null;
 };
 
-if (!admin.apps.length) {
-  // Only initialize if we actually have the required keys
-  if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
-    try {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-      console.log("✅ Firebase Admin Initialized");
-    } catch (error) {
-      console.error("❌ Firebase Admin Init Error:", error);
-    }
-  } else {
-    console.warn("⚠️ Firebase Admin credentials missing. Skipping init (Normal during build).");
+// Instead of exporting a constant 'db', export a function
+export const getAdminDb = () => {
+  const app = initAdmin();
+  if (!app) {
+    // During build, this might be null. We return a proxy or null 
+    // to prevent the "Default app does not exist" crash.
+    return null as any; 
   }
-}
-
-export const adminDb = admin.firestore();
+  return admin.firestore();
+};
