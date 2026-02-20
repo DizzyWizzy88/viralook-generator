@@ -5,19 +5,27 @@ export async function POST(req: Request) {
   try {
     const { priceId, userId, userEmail } = await req.json();
 
-    // Any paid plan in this new setup is a subscription
+    if (!priceId) {
+      return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription", 
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing`,
-      metadata: { userId, email: userEmail },
-      customer_email: userEmail, 
+      // Fallback to localhost if NEXT_PUBLIC_BASE_URL isn't set in Vercel yet
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://' + process.env.VERCEL_URL}/dashboard?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://' + process.env.VERCEL_URL}/pricing`,
+      metadata: { 
+        userId: userId || "anonymous", 
+        email: userEmail || "no-email" 
+      },
+      customer_email: userEmail || undefined, 
     });
 
     return NextResponse.json({ url: session.url });
   } catch (err: any) {
+    console.error("Stripe Session Error:", err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
