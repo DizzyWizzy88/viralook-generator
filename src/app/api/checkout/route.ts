@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription", 
+      allow_promotion_codes: true,
       // Fallback to localhost if NEXT_PUBLIC_BASE_URL isn't set in Vercel yet
       success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing`,
