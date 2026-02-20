@@ -1,27 +1,40 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useSummoningSequence } from '@/hooks/useSummoningSequence';
-import { db, getFirebaseAuth } from '@/lib/firebase';
+import React, { useState, useEffect } from 'react';
 import { 
-  doc, 
-  updateDoc, 
-  increment, 
-  getDoc, 
-  setDoc 
-} from 'firebase/firestore';
-import { Sparkles, Zap, AlertCircle, RefreshCw, Wand2 } from 'lucide-react';
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  onAuthStateChanged, 
+  User 
+} from 'firebase/auth';
+import { doc, updateDoc, increment, getDoc, setDoc } from 'firebase/firestore';
+import { db, getFirebaseAuth } from '@/lib/firebase';
+import { useSummoningSequence } from '@/hooks/useSummoningSequence';
+import { 
+  Sparkles, 
+  Zap, 
+  AlertCircle, 
+  RefreshCw, 
+  Wand2, 
+  LogIn, 
+  Lock,
+  Download
+} from 'lucide-react';
 
 const VERCEL_API_URL = "/api/generate";
 
 export default function Generator() {
+  // Auth State
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Generation State
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [enhancedPrompt, setEnhancedPrompt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Using the updated hook with phase control
   const { 
     progress, 
     currentMessage, 
@@ -30,25 +43,36 @@ export default function Generator() {
     failSummoning 
   } = useSummoningSequence();
 
+  // Listen for Auth changes
+  useEffect(() => {
+    const auth = getFirebaseAuth();
+    return onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+  }, []);
+
+  const handleLogin = async () => {
+    const auth = getFirebaseAuth();
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      console.error("Login failed:", err);
+      setError("LOGIN FAILED. PLEASE TRY AGAIN.");
+    }
+  };
+
   const handleSummon = async () => {
-    if (!prompt) return;
+    if (!prompt || !user) return;
     
     setError(null);
     setResultImage(null);
     setEnhancedPrompt(null);
     setIsGenerating(true);
 
-    const auth = getFirebaseAuth();
-    const user = auth.currentUser;
-
-    if (!user) {
-      setError("PLEASE LOGIN TO SUMMON");
-      setIsGenerating(false);
-      return;
-    }
-
     try {
-      // 1. Credit Check & User Init
+      // 1. Server-Side Sync & Credit Validation
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -69,13 +93,14 @@ export default function Generator() {
       // 2. Start Visual Sequence
       startSummoning();
 
-      // 3. API Call (Triggers Llama + Flux)
+      // 3. API Call
       const response = await fetch(VERCEL_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           prompt, 
-          userId: user.uid 
+          userId: user.uid,
+          userName: user.displayName || "Anonymous Creator"
         }),
       });
 
@@ -85,30 +110,63 @@ export default function Generator() {
         throw new Error(data.error || "GENERATION FAILED");
       }
 
-      // 4. Success State
+      // 4. Update UI
       setResultImage(data.imageUrl);
       setEnhancedPrompt(data.enhancedPrompt);
       completeSummoning();
 
-      // 5. Deduct Credit
+      // 5. Success - Deduct Credit
       if (!userData?.isUnlimited) {
         await updateDoc(userRef, { credits: increment(-1) });
       }
       
     } catch (err: any) {
       console.error("Summoning error:", err);
-      const errorMessage = err.message || "THE SPIRITS ARE SILENT...";
-      setError(errorMessage);
-      failSummoning(errorMessage);
+      const msg = err.message || "THE SPIRITS ARE SILENT...";
+      setError(msg);
+      failSummoning(msg);
     } finally {
       setIsGenerating(false);
     }
   };
 
+  // --- RENDERING LOGIC ---
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <RefreshCw className="animate-spin text-zinc-800" size={32} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="w-full max-w-2xl mx-auto">
+        <div className="bg-zinc-900/40 border-2 border-dashed border-white/5 rounded-[2.5rem] p-12 text-center backdrop-blur-xl">
+          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+            <Lock className="text-zinc-600" size={32} />
+          </div>
+          <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white mb-3">
+            Summoning Locked
+          </h2>
+          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-8 max-w-xs mx-auto leading-loose">
+            Sign in with Google to access the AI Architect and use your free credits.
+          </p>
+          <button 
+            onClick={handleLogin}
+            className="flex items-center gap-3 bg-white text-black px-10 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-cyan-400 transition-all mx-auto"
+          >
+            <LogIn size={16} /> Sign in with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
-      {/* Input Section */}
-      <div className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-6 backdrop-blur-xl shadow-2xl">
+      <div className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -138,7 +196,6 @@ export default function Generator() {
         </div>
       </div>
 
-      {/* Progress Bar */}
       {isGenerating && (
         <div className="space-y-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
@@ -153,43 +210,42 @@ export default function Generator() {
         </div>
       )}
 
-      {/* Error Message */}
       {error && !isGenerating && (
         <div className="flex items-center justify-center gap-3 text-red-500 font-black text-[10px] tracking-widest uppercase py-4 border border-red-500/20 rounded-2xl bg-red-500/5">
           <AlertCircle size={14} /> {error}
         </div>
       )}
 
-      {/* Final Result Display */}
       {resultImage && !isGenerating && (
         <div className="space-y-6 animate-in zoom-in-95 duration-700">
-          <div className="rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative group">
+          <div className="rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl relative group">
              <img src={resultImage} alt="Summoned Vision" className="w-full h-auto object-cover" />
              
-             {/* Hover Overlay with Enhanced Prompt */}
              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 p-8 flex flex-col justify-end">
                 <div className="flex items-center gap-2 text-cyan-400 mb-2">
                   <Wand2 size={14} />
                   <span className="text-[10px] font-black tracking-widest uppercase">AI Architect Expansion</span>
                 </div>
-                <p className="text-xs text-zinc-200 italic leading-relaxed line-clamp-4">
+                <p className="text-xs text-zinc-200 italic leading-relaxed">
                   "{enhancedPrompt}"
                 </p>
              </div>
           </div>
 
-          {/* Quick Info Badge */}
           <div className="bg-zinc-900/30 rounded-2xl p-5 border border-white/5 flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Technique</p>
-              <p className="text-[11px] text-zinc-400 font-medium">Flux.1 Schnell + Llama 3.1 8B</p>
+              <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Creator</p>
+              <p className="text-[11px] text-zinc-400 font-medium">{user.displayName}</p>
             </div>
-            <button 
-              onClick={() => window.open(resultImage, '_blank')}
-              className="text-[9px] font-black tracking-widest uppercase text-white hover:text-cyan-400 transition-colors"
+            <a 
+              href={resultImage} 
+              download={`summon-${Date.now()}.png`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-[9px] font-black tracking-widest uppercase text-white hover:text-cyan-400 transition-colors bg-white/5 px-4 py-2 rounded-lg"
             >
-              HD DOWNLOAD
-            </button>
+              <Download size={14} /> HD SAVE
+            </a>
           </div>
         </div>
       )}
