@@ -2,8 +2,9 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { fal } from "@fal-ai/client";
+// Import the Transaction type specifically for TypeScript
+import { Transaction } from "firebase-admin/firestore";
 
-// Llama 3.1 Prompt Expansion Logic
 async function enhancePromptWithLlama(userPrompt: string) {
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -48,15 +49,15 @@ export async function POST(req: Request) {
 
     const userRef = adminDb.collection("users").doc(userId);
 
-    // 1. ATOMIC TRANSACTION: Handles New Users (2 credits) & Deductions
-    const transactionResult = await adminDb.runTransaction(async (transaction) => {
+    // FIX: Explicitly type the transaction as 'Transaction'
+    const transactionResult = await adminDb.runTransaction(async (transaction: Transaction) => {
       const userDoc = await transaction.get(userRef);
 
-      // Handle New User: Give 2 credits, deduct 1 for this request
+      // New User Logic: Give 2 credits, use 1 immediately
       if (!userDoc.exists) {
         const newUser = {
           email: userEmail || "No Email Provided",
-          credits: 1, // Start with 2, but use 1 immediately
+          credits: 1, 
           createdAt: new Date().toISOString(),
         };
         transaction.set(userRef, newUser);
@@ -66,21 +67,18 @@ export async function POST(req: Request) {
       const userData = userDoc.data();
       const currentCredits = userData?.credits || 0;
 
-      // Handle Out of Credits
       if (currentCredits < 1 && !userData?.isUnlimited) {
         return { canGenerate: false };
       }
 
-      // Deduct 1 Credit
-      const updateData = userData?.isUnlimited ? {} : { credits: currentCredits - 1 };
+      // Deduct 1 Credit unless unlimited
       if (!userData?.isUnlimited) {
-        transaction.update(userRef, updateData);
+        transaction.update(userRef, { credits: currentCredits - 1 });
       }
       
       return { canGenerate: true };
     });
 
-    // 2. Redirect Check
     if (!transactionResult.canGenerate) {
       return NextResponse.json(
         { error: "Out of credits", shouldRedirect: true }, 
@@ -88,7 +86,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. AI Workflow: Enhance -> Generate
+    // AI Generation Workflow
     const enhancedPrompt = await enhancePromptWithLlama(prompt);
 
     const falResult: any = await fal.subscribe("fal-ai/flux/schnell", {
@@ -102,7 +100,7 @@ export async function POST(req: Request) {
 
     const imageUrl = falResult.images[0].url;
 
-    // 4. Record in Global Feed
+    // Save to Feed
     await adminDb.collection("global_feed").add({
       userId,
       userName: userName || "Anonymous Creator",
