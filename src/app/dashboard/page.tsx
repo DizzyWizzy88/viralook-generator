@@ -1,8 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import GeneratorForm from "@/components/GeneratorForm"; // Adjust path if needed
-import Gallery from "@/components/Gallery"; // Adjust path if needed
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -41,7 +39,7 @@ export default async function DashboardPage() {
         {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight">AI STUDIO</h1>
+            <h1 className="text-3xl font-black tracking-tight uppercase">Viralook Studio</h1>
             <p className="text-gray-500 text-sm">Create your next viral masterpiece.</p>
           </div>
           
@@ -62,15 +60,20 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* GENERATOR SECTION */}
+        {/* TEMPORARY PLACEHOLDER SECTION */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
-            <GeneratorForm userTier={userTier} credits={rawCredits} />
+          <div className="lg:col-span-1 p-8 bg-[#111] rounded-3xl border border-dashed border-white/20">
+            <h2 className="text-xl font-bold mb-4">Generator</h2>
+            <p className="text-gray-500 text-sm italic">
+              (Import your GeneratorForm component here)
+            </p>
           </div>
           
-          <div className="lg:col-span-2">
-            <h2 className="text-xl font-bold mb-4">Your Creations</h2>
-            <Gallery userId={userId} />
+          <div className="lg:col-span-2 p-8 bg-[#111] rounded-3xl border border-dashed border-white/20">
+            <h2 className="text-xl font-bold mb-4">Your Gallery</h2>
+            <p className="text-gray-500 text-sm italic">
+              (Import your Gallery component here)
+            </p>
           </div>
         </div>
 
