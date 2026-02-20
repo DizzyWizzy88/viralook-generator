@@ -1,5 +1,4 @@
-// src/lib/firebaseAdmin.ts
-import admin from 'firebase-admin';
+import admin from "firebase-admin";
 
 if (!admin.apps.length) {
   try {
@@ -7,13 +6,12 @@ if (!admin.apps.length) {
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        // The .replace fix is essential for Vercel!
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        // CRITICAL: This .replace() fix handles how Vercel stores newlines
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
       }),
     });
-    console.log("Firebase Admin Initialized");
   } catch (error) {
-    console.error("Firebase Admin Initialization Error:", error);
+    console.error("Firebase Admin Init Error:", error);
   }
 }
 
