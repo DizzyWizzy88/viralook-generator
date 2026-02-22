@@ -1,44 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
+import { db, getFirebaseAuth } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { Crown, Zap, Loader2 } from 'lucide-react';
 
 export default function CreditBadge() {
-  const [data, setData] = useState<{ credits: number | string; tier: string } | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [isUnlimited, setIsUnlimited] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch user data from your existing generate route (which returns credit count)
-    const checkCredits = async () => {
-      try {
-        const res = await fetch("/api/generate", { method: "POST", body: JSON.stringify({ ping: true }) });
-        const json = await res.json();
-        setData({
-          credits: json.remaining === null ? "∞" : json.remaining,
-          tier: json.tier || "free"
+    const auth = getFirebaseAuth();
+    
+    // Listen for Auth changes
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Real-time listener for the user's document
+        const unsubscribeDoc = onSnapshot(doc(db, "users", user.uid), (doc) => {
+          if (doc.exists()) {
+            const data = doc.data();
+            setCredits(data.credits ?? 0);
+            const isLegendUser = data.isUnlimited === true || data.tier === "legend";
+            setIsUnlimited(data.isUnlimited ?? false);
+          }
+          setLoading(false);
         });
-      } catch (err) {
-        console.error("Failed to load credits");
+
+        return () => unsubscribeDoc();
+      } else {
+        setLoading(false);
       }
-    };
-    checkCredits();
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
-  if (!data) return null;
+  if (loading) return <Loader2 className="animate-spin text-zinc-700" size={16} />;
 
-  const isLegend = data.tier === "viral_legend";
-  const isPro = data.tier === "pro";
+  if (isUnlimited) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/50 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.2)] animate-in fade-in zoom-in duration-500">
+        <Crown size={14} className="text-cyan-400 fill-cyan-400" />
+        <span className="text-[10px] font-black tracking-[0.2em] text-cyan-400 uppercase">
+          Viral Legend
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className={`inline-flex items-center px-4 py-2 rounded-full border shadow-sm transition-all ${
-      isLegend ? "bg-orange-50 border-orange-200 text-orange-700" : 
-      isPro ? "bg-purple-50 border-purple-200 text-purple-700" : 
-      "bg-gray-50 border-gray-200 text-gray-600"
-    }`}>
-      <span className="text-xs font-bold uppercase tracking-wider mr-2">
-        {isLegend ? "👑 Legend" : isPro ? "⭐ Pro" : "Free"}
-      </span>
-      <div className="h-4 w-[1px] bg-current opacity-20 mr-2"></div>
-      <span className="font-mono font-bold">
-        {data.credits} {typeof data.credits === "number" ? "Credits" : ""}
+    <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-full">
+      <Zap size={12} className="text-yellow-500 fill-yellow-500" />
+      <span className="text-[10px] font-black tracking-[0.2em] text-zinc-400 uppercase">
+        {credits ?? 0} Credits
       </span>
     </div>
   );

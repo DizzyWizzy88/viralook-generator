@@ -15,6 +15,7 @@
     "@capacitor/android": "^8.0.1",
     "@capacitor/cli": "^7.4.5",
     "@capacitor/core": "^8.0.1",
+    "@clerk/nextjs": "^6.38.0",
     "@expo/next-adapter": "^6.0.0",
     "@fal-ai/client": "^1.7.2",
     "@fal-ai/server-proxy": "^1.1.2",
