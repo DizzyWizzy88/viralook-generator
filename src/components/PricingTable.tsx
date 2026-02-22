@@ -10,21 +10,25 @@ export default function PricingTable() {
   const router = useRouter();
   const [userTier, setUserTier] = useState<string | null>(null);
   const [isLegend, setIsLegend] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null); // Track which plan is loading
 
   // Listen for Auth changes and check tier
-  useEffect(() => {
-    const auth = getFirebaseAuth();
-    return onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const snap = await getDoc(doc(db, "users", currentUser.uid));
-        if (snap.exists()) {
-          const data = snap.data();
-          setUserTier(data?.tier || null);
-          setIsLegend(data?.isUnlimited === true || data?.tier === 'legend');
-        }
+useEffect(() => {
+  const auth = getFirebaseAuth();
+  return onAuthStateChanged(auth, async (currentUser) => {
+    if (currentUser) {
+      console.log("User detected:", currentUser.uid); // Debugging
+      const snap = await getDoc(doc(db, "users", currentUser.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserTier(data?.tier || 'starter'); // Default to starter
+        setIsLegend(data?.isUnlimited === true);
       }
-    });
-  }, []);
+    } else {
+      console.log("No user detected");
+    }
+  });
+}, []);
 
   const plans = [
     {
@@ -59,29 +63,54 @@ export default function PricingTable() {
     }
   ];
 
-  const handleCheckout = async (priceId: string | null) => {
-    if (!priceId) {
-      router.push('/dashboard');
-      return;
-    }
+  const handleCheckout = async (priceId: string | null, planId: string) => {
+  if (!priceId) {
+    // If it's the free starter plan
+    alert("You are now using the Starter plan! 2 credits have been added to your account.");
+    router.push('/dashboard'); 
+    return;
+  }  
+
+    setLoading(planId); // Set loading for this specific plan
+
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         body: JSON.stringify({ priceId }),
         headers: { "Content-Type": "application/json" },
       });
+
+      if (!res.ok) {
+        setLoading(null); // Stop loading if error
+        if (res.status === 401) {
+          alert("Please sign in to upgrade your plan.");
+          router.push('/login');
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          alert(errorData.error || "Checkout failed. Please try again.");
+        }
+        return;
+      }
+
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setLoading(null);
+        alert("Could not initialize Stripe. Try again later.");
+      }
     } catch (err) {
+      setLoading(null); // Stop loading on network crash
       console.error("Checkout error:", err);
+      alert("Network error. Please check your connection.");
     }
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4 py-12">
       {plans.map((plan) => {
-        // Check if this specific plan is the user's current tier
         const isCurrentPlan = (plan.id === 'legend' && isLegend) || (plan.id === userTier);
+        const isCurrentlyLoading = loading === plan.id;
 
         return (
           <div 
@@ -106,17 +135,17 @@ export default function PricingTable() {
             </ul>
 
             <button 
-              onClick={() => !isCurrentPlan && handleCheckout(plan.priceId)} 
-              disabled={isCurrentPlan}
-              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+              onClick={() => !isCurrentPlan && !isCurrentlyLoading && handleCheckout(plan.priceId, plan.id)} 
+              disabled={isCurrentPlan || !!loading}
+              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all flex justify-center items-center ${
                 isCurrentPlan 
                   ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed border-2 border-zinc-200' 
                   : plan.highlight 
                     ? 'bg-blue-600 text-white shadow-lg hover:bg-blue-700' 
                     : 'bg-black text-white hover:bg-zinc-800'
-              }`}
+              } ${loading && !isCurrentlyLoading ? 'opacity-50 cursor-wait' : ''}`}
             >
-              {isCurrentPlan ? "CURRENT PLAN" : plan.buttonText}
+              {isCurrentPlan ? "CURRENT PLAN" : isCurrentlyLoading ? "LOADING..." : plan.buttonText}
             </button>
           </div>
         );
