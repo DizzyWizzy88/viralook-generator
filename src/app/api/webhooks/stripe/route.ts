@@ -61,10 +61,13 @@ export async function POST(req: Request) {
       }, { merge: true });
 
       console.log(`✅ User ${userId} upgraded to ${tier}`);
-    } catch (dbError) {
-      console.error("Firestore Update Error:", dbError);
-      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
-    }
-  } // <--- This closing brace is vital
+
+     } catch (dbError) {
+       console.error("Firestore Update Error:", dbError);
+       return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+     }
+   } // <--- This closes the if (event.type === ...)
 
   return NextResponse.json({ received: true });
+
+} // <--- ADD THIS BRACE! It closes the "export async function POST"
