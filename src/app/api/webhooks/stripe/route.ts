@@ -27,15 +27,27 @@ export async function POST(req: Request) {
 
   const session = event.data.object as Stripe.Checkout.Session;
 
-  if (event.type === "checkout.session.completed") {
-    const userId = session.metadata?.userId;
-    // Get Price ID from the session or the subscription
-    const priceId = session.line_items?.data[0]?.price?.id || session.subscription;
+  // ... inside the if (event.type === "checkout.session.completed") block
 
-    if (!userId) {
-      console.error("No userId found in session metadata");
-      return NextResponse.json({ error: "No userId" }, { status: 400 });
-    }
+const userId = session.metadata?.userId;
+const customerId = session.customer as string; // <--- 1. ADD THIS LINE
+
+if (!userId) {
+  console.error("No userId found in session metadata");
+  return NextResponse.json({ error: "No userId" }, { status: 400 });
+}
+
+// ... your tier mapping logic ...
+
+// Update Firestore
+await adminDb!.collection("users").doc(userId).set({
+  tier: tier,
+  credits: creditsToAdd,
+  stripeCustomerId: customerId, // <--- 2. ADD THIS LINE
+  updatedAt: new Date().toISOString(),
+}, { merge: true });
+
+// ... rest of your code
 
     // Tier mapping with Credit Allocation
     let tier = "starter";
@@ -61,4 +73,4 @@ export async function POST(req: Request) {
 
     console.log(`✅ User ${userId} successfully upgraded to ${tier} with ${creditsToAdd} credits`);
    }
-}
+

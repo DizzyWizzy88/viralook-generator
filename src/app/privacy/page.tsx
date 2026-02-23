@@ -1,31 +1,17 @@
 export default function PrivacyPolicy() {
-  const containerStyle = {
-    padding: '40px',
-    maxWidth: '800px',
-    margin: '0 auto',
-    backgroundColor: '#000000',
-    color: '#ffffff',
-    minHeight: '100vh',
-    fontFamily: 'sans-serif',
-    lineHeight: '1.6'
-  };
-
-  const headerStyle = { color: '#ffffff', borderBottom: '1px solid #333', paddingBottom: '10px' };
-  const textStyle = { color: '#ffffff' };
-
   return (
-    <div style={containerStyle}>
-      <h1 style={headerStyle}>Privacy Policy</h1>
-      <p style={textStyle}>Last updated: January 20, 2026</p>
-
-      <h2 style={headerStyle}>1. Information We Collect</h2>
-      <p style={textStyle}>We collect minimal information to provide our service, including device identifiers and data provided via Stripe for subscriptions.</p>
-
-      <h2 style={headerStyle}>2. How We Use Data</h2>
-      <p style={textStyle}>Data is used solely to provide image generation services through our AI partners (fal.ai) and to manage your paid subscriptions.</p>
-
-      <h2 style={headerStyle}>3. Contact Us</h2>
-      <p style={textStyle}>For questions regarding this policy, please contact us at your support email.</p>
+    <div className="max-w-4xl mx-auto py-12 px-4">
+      <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
+      <p className="mb-4">Last Updated: February 2026</p>
+      <section className="space-y-4">
+        <p>At Viralook, we respect your privacy. This policy outlines how we handle your data.</p>
+        <h2 className="text-xl font-semibold">1. Data We Collect</h2>
+        <p>We collect your email address via Firebase Authentication and your payment history via Stripe.</p>
+        <h2 className="text-xl font-semibold">2. Third-Party Services</h2>
+        <p>We use <strong>Google Firebase</strong> for data storage and <strong>Stripe</strong> for payment processing. We do not store your credit card information on our servers.</p>
+        <h2 className="text-xl font-semibold">3. AI Data</h2>
+        <p>Images generated are stored in your private gallery. We do not use your generated images to train our models without your explicit consent.</p>
+      </section>
     </div>
   );
 }
