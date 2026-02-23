@@ -27,15 +27,16 @@ export async function POST(req: Request) {
 
   const session = event.data.object as Stripe.Checkout.Session;
 
-  // ... inside the if (event.type === "checkout.session.completed") block
+  if (event.type === "checkout.session.completed") {
+  const userId = session.metadata?.userId;
+  const customerId = session.customer as string; // <--- 1. ADD THIS LINE
+  const priceId = session.line_items?.data[0]?.price?.id || session.subscription;
 
-const userId = session.metadata?.userId;
-const customerId = session.customer as string; // <--- 1. ADD THIS LINE
-
-if (!userId) {
+  if (!userId) {
   console.error("No userId found in session metadata");
-  return NextResponse.json({ error: "No userId" }, { status: 400 });
-}
+   return NextResponse.json({ error: "No userId" }, { status: 400 });
+ }
+
 
 // ... your tier mapping logic ...
 
@@ -68,6 +69,7 @@ await adminDb!.collection("users").doc(userId).set({
     await adminDb!.collection("users").doc(userId).set({
       tier: tier,
       credits: creditsToAdd, // This is what was missing!
+      stripeCustomerId: customerId,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
 
