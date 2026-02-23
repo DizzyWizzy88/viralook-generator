@@ -1,26 +1,32 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-white">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col items-center md:items-start">
-            <span className="text-xl font-bold text-blue-600">Viralook</span>
-            <p className="mt-2 text-sm text-gray-500">
-              Professional AI photos in seconds.
-            </p>
+    <footer className="border-t bg-white py-4 shadow-inner">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        
+        {/* Logo and Name Grouped */}
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+             {/* Replace this div with an <Image /> tag if you have a logo file */}
+             <span className="text-[10px] text-white font-bold">V</span>
           </div>
-          
-          <div className="flex gap-8 text-sm text-gray-600">
-            <Link href="/privacy" className="hover:text-blue-600 transition">Privacy</Link>
-            <Link href="/terms" className="hover:text-blue-600 transition">Terms</Link>
-            <Link href="mailto:support@viralook.com" className="hover:text-blue-600 transition">Contact</Link>
-          </div>
-          
-          <div className="text-sm text-gray-400">
-            © {new Date().getFullYear()} Viralook. All rights reserved.
-          </div>
+          <span className="text-lg font-extrabold tracking-tight text-slate-900">
+            Viralook
+          </span>
+        </div>
+
+        {/* Thinner Links */}
+        <div className="flex gap-8 text-sm font-semibold text-slate-500">
+          <Link href="/privacy" className="hover:text-blue-600 transition">Privacy</Link>
+          <Link href="/terms" className="hover:text-blue-600 transition">Terms</Link>
+          <Link href="mailto:support@viralook.com" className="hover:text-blue-600 transition">Contact</Link>
+        </div>
+
+        {/* Small Copyright */}
+        <div className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
+          © 2026 Viralook
         </div>
       </div>
     </footer>

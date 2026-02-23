@@ -1,38 +1,23 @@
-"use client";
+import Link from 'next/link';
 
-import { getFirebaseAuth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
-import { LogOut, User as UserIcon } from 'lucide-react';
-
-export default function UserMenu({ user }: { user: any }) {
-  const handleLogout = async () => {
-    const auth = getFirebaseAuth();
-    await signOut(auth);
-    window.location.reload(); // Refresh to lock the generator
-  };
-
-  if (!user) return null;
-
+export default function Navbar() {
   return (
-    <div className="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-full border border-white/5">
-      <div className="flex items-center gap-2 px-3">
-        {user.photoURL ? (
-          <img src={user.photoURL} className="w-6 h-6 rounded-full border border-cyan-500/50" alt="avatar" />
-        ) : (
-          <UserIcon size={16} className="text-zinc-500" />
-        )}
-        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hidden md:block">
-          {user.displayName?.split(' ')[0]}
-        </span>
+    <nav className="w-full bg-black/50 backdrop-blur-xl border-b border-white/5 fixed top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        {/* LOGO AND BRAND NEXT TO EACH OTHER */}
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-transform group-hover:scale-110" />
+          <span className="text-xl font-black tracking-tighter text-white">
+            Viralook <span className="text-blue-500">AI Studio</span>
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="text-xs font-bold text-zinc-400 hover:text-white transition uppercase tracking-widest">Dashboard</Link>
+          <div className="h-4 w-[1px] bg-zinc-800" />
+          <button className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden" />
+        </div>
       </div>
-      
-      <button 
-        onClick={handleLogout}
-        className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-full transition-colors text-zinc-500"
-        title="Sign Out"
-      >
-        <LogOut size={16} />
-      </button>
-    </div>
+    </nav>
   );
 }

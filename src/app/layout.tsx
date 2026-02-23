@@ -27,7 +27,8 @@ export default function RootLayout({
       {/* 1. 'flex flex-col' makes the body a column 
           2. 'min-h-screen' ensures it's at least the full height of the window 
       */}
-      <body className="flex flex-col min-h-screen">
+
+      <body className="bg-slate-50 flex flex-col min-h-screen">
         
         {/* 'flex-grow' tells the main content to take up all available space,
             pushing the footer to the bottom.
