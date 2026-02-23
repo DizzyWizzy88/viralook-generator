@@ -1,126 +1,151 @@
 "use client";
+import React, { useEffect, useState } from 'react';
+import { getFirestore, doc, onSnapshot, collection, query, orderBy } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image'; // Required for the logo
-import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
-
-// Importing your specific components
-import Generator from './Generator';
-import CreditBadge from './CreditBadge';
-import PricingTable from './PricingTable';
-import ImageGallery from './ImageGallery';
-import LoadingBar from './LoadingBar';
-
-export default function DashboardContent() {
+export default function DashboardContent({ userId }: { userId: string }) {
   const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const auth = getFirebaseAuth();
-  const db = getFirebaseDb();
+  const [images, setImages] = useState<any[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const router = useRouter();
+  const db = getFirestore();
 
+  // 1. Listen to User Profile (Credits & Tier)
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    // Real-time listener for user data and credits
-    const userRef = doc(db, "users", user.uid);
-    const unsubscribe = onSnapshot(userRef, (doc) => {
+    if (!userId) return;
+    const unsubUser = onSnapshot(doc(db, "users", userId), (doc) => {
       if (doc.exists()) {
         setUserData(doc.data());
-      } else {
-        // Sets 2 free credits for new users not yet in the database
-        setUserData({ credits: 2 });
       }
-      setLoading(false);
-    }, (error) => {
-      console.error("Firebase Sync Error:", error);
-      setLoading(false);
     });
+    return () => unsubUser();
+  }, [userId, db]);
 
-    return () => unsubscribe();
-  }, [auth, db]);
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-blue-500">
-        <LoadingBar progress={45} />
-        <p className="mt-4 animate-pulse uppercase tracking-[0.3em] text-[10px] font-bold">
-          Initializing Studio
-        </p>
-      </div>
+  // 2. Listen to User's Generated Images Gallery
+  useEffect(() => {
+    if (!userId) return;
+    const q = query(
+      collection(db, "users", userId, "images"), 
+      orderBy("createdAt", "desc")
     );
-  }
+    const unsubImages = onSnapshot(q, (snapshot) => {
+      const fetchedImages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setImages(fetchedImages);
+    });
+    return () => unsubImages();
+  }, [userId, db]);
+
+  const hasCredits = (userData?.credits || 0) > 0;
+
+  const handleGenerateClick = () => {
+    if (!hasCredits) {
+      router.push('/upgrade');
+      return;
+    }
+    // This is where you'd trigger your actual AI API call
+    console.log("Starting generation...");
+    setIsGenerating(true);
+    
+    // Simulating an API call for now
+    // setTimeout(() => setIsGenerating(false), 3000);
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8 overflow-x-hidden">
-      
-      {/* HEADER: Logo + Text + Credits */}
-      <header className="max-w-4xl mx-auto flex justify-between items-center mb-12">
-        <div className="flex items-center gap-4">
-          {/* Logo Container */}
-          <div className="relative w-12 h-12">
-            <Image 
-              src="/Viralook.png" 
-              alt="Viralook Logo"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
-          
-          {/* Brand Identity */}
-          <div>
-            <h1 className="text-xl font-black tracking-tighter text-white leading-none">
-              VIRALOOK <span className="text-blue-500 italic">STUDIO</span>
-            </h1>
-            <p className="text-[9px] text-zinc-500 font-bold tracking-[0.3em] uppercase mt-1">
-              AI Creative Suite
-            </p>
+    <div className="max-w-6xl mx-auto px-4 py-8 min-h-screen bg-white text-gray-900">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 border-b border-gray-100 pb-8 gap-4">
+        <div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">My Studio</h1>
+          <div className="flex items-center gap-3 mt-2">
+            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-100">
+              {userData?.tier || 'Starter'} Plan
+            </span>
           </div>
         </div>
-
-        <CreditBadge/>
-      </header>
-
-      {/* MAIN CONTENT: Vertical Stack */}
-      <main className="max-w-4xl mx-auto flex flex-col gap-12">
         
-        {/* 1. Generator Card */}
+        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 min-w-[150px] text-center md:text-right">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Available Credits</p>
+          <p className="text-3xl font-black text-blue-600 leading-none">
+            {userData?.credits ?? 0}
+          </p>
+        </div>
+      </div>
 
-       {/* Find the Generator section and update it to this: */}
-       <section className="w-full bg-zinc-900/40 border border-zinc-800/50 rounded-[2rem] p-1 shadow-2xl">
-         <div className="bg-black/20 rounded-[1.8rem] p-6">
-           <Generator />
-         </div>
-       </section>
+      {/* ACTION SECTION (The Credit Guard) */}
+      <div className="mb-16">
+        {hasCredits ? (
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <button 
+              onClick={handleGenerateClick}
+              disabled={isGenerating}
+              className="group relative w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-14 rounded-2xl shadow-2xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+            >
+              {isGenerating ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  AI IS COOKING...
+                </span>
+              ) : (
+                <>
+                  <span>CREATE NEW LOOK</span>
+                  <span className="bg-blue-500/50 text-[10px] px-2 py-1 rounded-lg">-1</span>
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-400 italic font-medium ml-2">
+              Transform your selfies into professional headshots instantly.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-dashed border-gray-200 rounded-[2rem] p-10 text-center">
+            <div className="text-4xl mb-4">💎</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Out of Credits</h3>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto">
+              You've used all your credits. Upgrade now to keep generating high-quality AI headshots.
+            </p>
+            <button 
+              onClick={() => router.push('/upgrade')}
+              className="bg-gray-900 text-white font-bold py-4 px-12 rounded-2xl hover:bg-black transition-all shadow-lg animate-pulse"
+            >
+              REFULL CREDITS
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* GALLERY SECTION */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          Your Gallery
+          <span className="text-sm font-medium text-gray-400">({images.length})</span>
+        </h2>
         
-        {/* 2. Pricing & Upgrades Section */}
-        <section className="w-full py-4">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="h-[1px] flex-1 bg-zinc-800"></div>
-            <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">
-              Membership Plans
-              </h2>
-            <div className="h-[1px] flex-1 bg-zinc-800"></div>
+        {images.length === 0 ? (
+          <div className="text-center py-20 bg-gray-50 rounded-3xl border border-gray-100">
+            <p className="text-gray-400 font-medium italic">Your generated photos will appear here...</p>
           </div>
-          <PricingTable />
-        </section>
-
-        {/* 3. Your Creations Gallery */}
-        <section className="w-full">
-          <div className="flex justify-between items-end mb-6 px-2">
-            <h2 className="text-2xl font-bold tracking-tight">Your Creations</h2>
-            <button className="text-xs text-blue-500 font-bold hover:underline">View All</button>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {images.map((img) => (
+              <div key={img.id} className="group relative aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
+                <img 
+                  src={img.url} 
+                  alt="AI Generation" 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                   <button className="bg-white text-gray-900 px-4 py-2 rounded-xl text-sm font-bold transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                      Download
+                   </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="bg-zinc-900/10 rounded-3xl p-2 border border-zinc-800/30">
-            <ImageGallery />
-          </div>
-        </section>
-
-      </main>
-
-      {/* Bottom Padding for Mobile */}
-      <div className="h-24" />
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Viralook AI Studio | AI Summoning Suite",
@@ -18,33 +19,26 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" className="dark" style={{ backgroundColor: '#000000' }}>
-      <head>
-        {/* Prefetching the login page at the head level tells the browser 
-          to prioritize this route's assets, making the redirect from 
-          the home page feel instantaneous.
-        */}
-        <link rel="prefetch" href="/login" />
-      </head>
-      <body className="antialiased bg-black text-white selection:bg-cyan-500/30 font-sans">
-        <ServiceWorkerRegistrar />
+    <html lang="en">
+      {/* 1. 'flex flex-col' makes the body a column 
+          2. 'min-h-screen' ensures it's at least the full height of the window 
+      */}
+      <body className="flex flex-col min-h-screen">
         
-        <div className="relative min-h-screen overflow-x-hidden">
-          {/* This background gradient matches your dashboard and login pages 
-             to ensure that even during page transitions, the background 
-             remains consistent and flicker-free.
-          */}
-          <div 
-            className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,#161616_0%,#000000_100%)] -z-10" 
-            aria-hidden="true"
-          />
-          
-          <main>{children}</main>
-        </div>
+        {/* 'flex-grow' tells the main content to take up all available space,
+            pushing the footer to the bottom.
+        */}
+        <main className="flex-grow">
+          {children}
+        </main>
+
+        {/* The Footer sits at the very end of the body */}
+        <Footer />
+        
       </body>
     </html>
   );
