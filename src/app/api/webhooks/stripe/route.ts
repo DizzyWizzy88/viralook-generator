@@ -74,5 +74,5 @@ await adminDb!.collection("users").doc(userId).set({
     }, { merge: true });
 
     console.log(`✅ User ${userId} successfully upgraded to ${tier} with ${creditsToAdd} credits`);
-   }
-
+  }  
+ }
