@@ -60,3 +60,5 @@ export async function POST(req: Request) {
     }, { merge: true });
 
     console.log(`✅ User ${userId} successfully upgraded to ${tier} with ${creditsToAdd} credits`);
+   }
+}

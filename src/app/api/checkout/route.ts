@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       mode: "subscription",
       // 2. Use the dynamically generated origin here
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}&plan=${planId || 'pro'}`,
-      cancel_url: `${origin}/'dashboard`,
+      cancel_url: `${origin}/dashboard`,
       metadata: { userId },
       customer_email: userEmail || undefined,
     });
