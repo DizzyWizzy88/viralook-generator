@@ -28,51 +28,43 @@ export async function POST(req: Request) {
   const session = event.data.object as Stripe.Checkout.Session;
 
   if (event.type === "checkout.session.completed") {
-  const userId = session.metadata?.userId;
-  const customerId = session.customer as string; // <--- 1. ADD THIS LINE
-  const priceId = session.line_items?.data[0]?.price?.id || session.subscription;
+    const userId = session.metadata?.userId;
+    const customerId = session.customer as string;
+    // Extract priceId safely
+    const priceId = session.line_items?.data?.[0]?.price?.id;
 
-  if (!userId) {
-  console.error("No userId found in session metadata");
-   return NextResponse.json({ error: "No userId" }, { status: 400 });
- }
+    if (!userId) {
+      console.error("No userId found in session metadata");
+      return NextResponse.json({ error: "No userId" }, { status: 400 });
+    }
 
-
-// ... your tier mapping logic ...
-
-// Update Firestore
-await adminDb!.collection("users").doc(userId).set({
-  tier: tier,
-  credits: creditsToAdd,
-  stripeCustomerId: customerId, // <--- 2. ADD THIS LINE
-  updatedAt: new Date().toISOString(),
-}, { merge: true });
-
-// ... rest of your code
-
-    // Tier mapping with Credit Allocation
+    // 1. Declare variables FIRST
     let tier = "starter";
     let creditsToAdd = 0;
 
-    // Pro Monthly
-    if (priceId === "price_1SlG310ZcMLctEm4DPIgTkyR") { // Note: I used your Pro ID from PricingTable
+    // 2. Assign values based on Price ID
+    if (priceId === "price_1SlG310ZcMLctEm4DPIgTkyR") { 
       tier = "pro";
       creditsToAdd = 500;
-    } 
-    // Viral Legend
-    else if (priceId === "price_1SlG4r0ZcMLctEm4Nyh0rswZ") {
+    } else if (priceId === "price_1SlG4r0ZcMLctEm4Nyh0rswZ") {
       tier = "legend";
-      creditsToAdd = 999999; // Or however you handle "Unlimited"
+      creditsToAdd = 999999;
     }
 
-    // Update Firestore
-    await adminDb!.collection("users").doc(userId).set({
-      tier: tier,
-      credits: creditsToAdd, // This is what was missing!
-      stripeCustomerId: customerId,
-      updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    // 3. Save to Firestore (MUST be inside this IF block)
+    try {
+      await adminDb!.collection("users").doc(userId).set({
+        tier: tier,
+        credits: creditsToAdd,
+        stripeCustomerId: customerId,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
 
-    console.log(`✅ User ${userId} successfully upgraded to ${tier} with ${creditsToAdd} credits`);
-  }  
- }
+      console.log(`✅ User ${userId} upgraded to ${tier}`);
+    } catch (dbError) {
+      console.error("Firestore Update Error:", dbError);
+      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+    }
+  } // <--- This closing brace is vital
+
+  return NextResponse.json({ received: true });
