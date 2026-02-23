@@ -4,23 +4,19 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { getFirebaseAuth } from "@/lib/firebase";
 
-// We use dynamic import to prevent "Hydration" errors with Firebase Auth
 const DashboardContent = dynamic(() => import('@/components/DashboardContent'), { ssr: false });
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
     const auth = getFirebaseAuth();
+    // This listener is the secret to smooth transitions
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
-        // If not logged in, send them to login
         router.push('/login');
       } else {
-        // Store the user and stop the loading spinner
-        setUser(user);
         setLoading(false);
       }
     });
@@ -29,12 +25,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-blue-500 font-black animate-pulse uppercase tracking-widest">
+      <div className="min-h-screen bg-black flex items-center justify-center text-blue-500 font-black animate-pulse">
         INITIALIZING STUDIO...
       </div>
     );
   }
 
-  // Pass the userId as a prop to the actual content component
-  return <DashboardContent userId={user?.uid} />;
+  return <DashboardContent />;
 }

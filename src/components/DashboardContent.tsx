@@ -1,60 +1,126 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 
-export default function DashboardContent({ userId }: { userId: string }) {
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image'; // Required for the logo
+import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+
+// Importing your specific components
+import Generator from './Generator';
+import CreditBadge from './CreditBadge';
+import PricingTable from './PricingTable';
+import ImageGallery from './ImageGallery';
+import LoadingBar from './LoadingBar';
+
+export default function DashboardContent() {
   const [userData, setUserData] = useState<any>(null);
-  const db = getFirestore();
+  const [loading, setLoading] = useState(true);
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDb();
 
   useEffect(() => {
-    if (!userId) return;
-    const unsub = onSnapshot(doc(db, "users", userId), (doc) => {
-      if (doc.exists()) setUserData(doc.data());
-    });
-    return () => unsub();
-  }, [userId, db]);
+    const user = auth.currentUser;
+    if (!user) return;
 
-  const hasCredits = (userData?.credits || 0) > 0;
+    // Real-time listener for user data and credits
+    const userRef = doc(db, "users", user.uid);
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        setUserData(doc.data());
+      } else {
+        // Sets 2 free credits for new users not yet in the database
+        setUserData({ credits: 2 });
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Firebase Sync Error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [auth, db]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-blue-500">
+        <LoadingBar progress={45} />
+        <p className="mt-4 animate-pulse uppercase tracking-[0.3em] text-[10px] font-bold">
+          Initializing Studio
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* HEADER: Restoring the Dark Premium Look */}
-      <div className="flex justify-between items-center mb-10 bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-2xl">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">My Studio</h1>
-          <span className="inline-block mt-2 bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-500/30">
-            {userData?.tier || 'Starter'} Plan
-          </span>
-        </div>
-        
-        <div className="text-right">
-          <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Credits</p>
-          <p className="text-4xl font-black text-white">{userData?.credits ?? 0}</p>
-        </div>
-      </div>
-
-      {/* ACTION AREA */}
-      <div className="mb-12">
-        {hasCredits ? (
-          <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black py-5 px-12 rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all active:scale-95">
-            CREATE NEW LOOK <span className="ml-2 opacity-50 text-sm">-1</span>
-          </button>
-        ) : (
-          <div className="bg-slate-100 border-2 border-dashed border-slate-200 rounded-[2rem] p-10 text-center">
-            <button onClick={() => window.location.href='/upgrade'} className="bg-slate-900 text-white font-bold py-4 px-10 rounded-xl">
-              REFILL CREDITS
-            </button>
+    <div className="min-h-screen bg-black text-white p-4 md:p-8 overflow-x-hidden">
+      
+      {/* HEADER: Logo + Text + Credits */}
+      <header className="max-w-4xl mx-auto flex justify-between items-center mb-12">
+        <div className="flex items-center gap-4">
+          {/* Logo Container */}
+          <div className="relative w-12 h-12">
+            <Image 
+              src="/Viralook.png" 
+              alt="Viralook Logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-        )}
-      </div>
-
-      {/* GALLERY PLACEHOLDER */}
-      <div className="mt-10">
-        <h2 className="text-xl font-bold text-slate-900 mb-6">Your Gallery</h2>
-        <div className="aspect-video bg-slate-50 border border-slate-100 rounded-[2.5rem] flex items-center justify-center border-dashed">
-          <p className="text-slate-400 italic font-medium">Your generated photos will appear here...</p>
+          
+          {/* Brand Identity */}
+          <div>
+            <h1 className="text-xl font-black tracking-tighter text-white leading-none">
+              VIRALOOK <span className="text-blue-500 italic">STUDIO</span>
+            </h1>
+            <p className="text-[9px] text-zinc-500 font-bold tracking-[0.3em] uppercase mt-1">
+              AI Creative Suite
+            </p>
+          </div>
         </div>
-      </div>
+
+        <CreditBadge/>
+      </header>
+
+      {/* MAIN CONTENT: Vertical Stack */}
+      <main className="max-w-4xl mx-auto flex flex-col gap-12">
+        
+        {/* 1. Generator Card */}
+
+       {/* Find the Generator section and update it to this: */}
+       <section className="w-full bg-zinc-900/40 border border-zinc-800/50 rounded-[2rem] p-1 shadow-2xl">
+         <div className="bg-black/20 rounded-[1.8rem] p-6">
+           <Generator />
+         </div>
+       </section>
+        
+        {/* 2. Pricing & Upgrades Section */}
+        <section className="w-full py-4">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-[1px] flex-1 bg-zinc-800"></div>
+            <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">
+              Membership Plans
+              </h2>
+            <div className="h-[1px] flex-1 bg-zinc-800"></div>
+          </div>
+          <PricingTable />
+        </section>
+
+        {/* 3. Your Creations Gallery */}
+        <section className="w-full">
+          <div className="flex justify-between items-end mb-6 px-2">
+            <h2 className="text-2xl font-bold tracking-tight">Your Creations</h2>
+            <button className="text-xs text-blue-500 font-bold hover:underline">View All</button>
+          </div>
+          <div className="bg-zinc-900/10 rounded-3xl p-2 border border-zinc-800/30">
+            <ImageGallery />
+          </div>
+        </section>
+
+      </main>
+
+      {/* Bottom Padding for Mobile */}
+      <div className="h-24" />
     </div>
   );
 }
