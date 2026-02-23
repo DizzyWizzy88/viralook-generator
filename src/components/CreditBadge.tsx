@@ -1,59 +1,46 @@
-"use client";
-
-import React, { useEffect, useState } from 'react';
-import { db, getFirebaseAuth } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { Crown, Zap, Loader2 } from 'lucide-react';
+import { db } from '@/lib/firebase'; // <--- Triple check this path!
 
 export default function CreditBadge() {
   const [credits, setCredits] = useState<number | null>(null);
-  const [isUnlimited, setIsUnlimited] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
+    const auth = getAuth();
     
-    // Listen for Auth changes
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Real-time listener for the user's document
-        const unsubscribeDoc = onSnapshot(doc(db, "users", user.uid), (doc) => {
-          if (doc.exists()) {
-            const data = doc.data();
-            setCredits(data.credits ?? 0);
-            const isLegendUser = data.isUnlimited === true || data.tier === "legend";
-            setIsUnlimited(data.isUnlimited ?? false);
+        console.log("CreditBadge: Found user", user.uid);
+        
+        const userRef = doc(db, "users", user.uid);
+        console.log("CreditBadge: Attempting to listen to path:", userRef.path);
+
+        const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            console.log("CreditBadge: Data received!", docSnap.data());
+            setCredits(docSnap.data().credits);
+          } else {
+            console.log("CreditBadge: No document found for this UID!");
           }
-          setLoading(false);
+        }, (error) => {
+          console.error("CreditBadge: Firestore Error ->", error.code, error.message);
         });
 
-        return () => unsubscribeDoc();
+        return () => unsubscribeSnapshot();
       } else {
-        setLoading(false);
+        console.log("CreditBadge: No user logged in");
+        setCredits(0);
       }
     });
 
     return () => unsubscribeAuth();
   }, []);
 
-  if (loading) return <Loader2 className="animate-spin text-zinc-700" size={16} />;
-
-  if (isUnlimited) {
-    return (
-      <div className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/50 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.2)] animate-in fade-in zoom-in duration-500">
-        <Crown size={14} className="text-cyan-400 fill-cyan-400" />
-        <span className="text-[10px] font-black tracking-[0.2em] text-cyan-400 uppercase">
-          Viral Legend
-        </span>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-full">
-      <Zap size={12} className="text-yellow-500 fill-yellow-500" />
-      <span className="text-[10px] font-black tracking-[0.2em] text-zinc-400 uppercase">
-        {credits ?? 0} Credits
+    <div className="flex items-center gap-2 px-3 py-1 bg-zinc-800 rounded-full border border-zinc-700">
+      <span className="text-sm font-medium text-zinc-100">
+        {credits ?? "..."} Credits
       </span>
     </div>
   );

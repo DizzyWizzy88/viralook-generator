@@ -1,28 +1,32 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/server/stripe";
+import { headers } from "next/headers"; // Add this import
 
 export async function POST(req: Request) {
   try {
-    const { priceId, userId, userEmail } = await req.json();
+    const { priceId, userId, userEmail, planId } = await req.json();
+    
+    // 1. Get the host dynamically from headers
+    const headerList = await headers();
+    const host = headerList.get("host");
+    
+    // Detect protocol (Vercel uses https, localhost uses http)
+    const protocol = host?.includes("localhost") ? "http" : "https";
+    const origin = `${protocol}://${host}`;
 
-    if (!priceId) {
-      return NextResponse.json({ error: "Price ID is required" }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://viralook-generator.vercel.app';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription", 
-      allow_promotion_codes: true,
-      // Fallback to localhost if NEXT_PUBLIC_BASE_URL isn't set in Vercel yet
-      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/pricing`,
-      metadata: { 
-        userId: userId || "anonymous", 
-        email: userEmail || "no-email" 
-      },
-      customer_email: userEmail || undefined, 
+      mode: "subscription",
+      // 2. Use the dynamically generated origin here
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}&plan=${planId || 'pro'}`,
+      cancel_url: `${origin}/'dashboard`,
+      metadata: { userId },
+      customer_email: userEmail || undefined,
     });
 
     return NextResponse.json({ url: session.url });
@@ -31,3 +35,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+

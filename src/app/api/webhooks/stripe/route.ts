@@ -37,22 +37,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No userId" }, { status: 400 });
     }
 
-    // Tier mapping
+    // Tier mapping with Credit Allocation
     let tier = "starter";
-    if (priceId === "price_1SlG4r0ZcMLctEm4Nyh0rswZ") {
+    let creditsToAdd = 0;
+
+    // Pro Monthly
+    if (priceId === "price_1SlG310ZcMLctEm4DPIgTkyR") { // Note: I used your Pro ID from PricingTable
       tier = "pro";
-    } else if (priceId === "price_LEGEND_39_RECURRING_ID") {
+      creditsToAdd = 500;
+    } 
+    // Viral Legend
+    else if (priceId === "price_1SlG4r0ZcMLctEm4Nyh0rswZ") {
       tier = "legend";
+      creditsToAdd = 999999; // Or however you handle "Unlimited"
     }
 
     // Update Firestore
     await adminDb!.collection("users").doc(userId).set({
       tier: tier,
+      credits: creditsToAdd, // This is what was missing!
       updatedAt: new Date().toISOString(),
     }, { merge: true });
 
-    console.log(`✅ User ${userId} successfully upgraded to ${tier}`);
-  }
-
-  return NextResponse.json({ received: true });
-}
+    console.log(`✅ User ${userId} successfully upgraded to ${tier} with ${creditsToAdd} credits`);

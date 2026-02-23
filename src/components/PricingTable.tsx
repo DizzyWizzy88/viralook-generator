@@ -1,155 +1,120 @@
-'use client';
-
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, getFirebaseAuth } from '@/lib/firebase';
+import { doc, setDoc } from "firebase/firestore";
+import { db, getFirebaseAuth } from "@/lib/firebase";
+
+const plans = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: '$0',
+    description: 'Perfect for trying us out',
+    features: ["2 One-time Credits", "Llama Basic Expansion", "Public Feed Only"],
+    priceId: null,
+  },
+  {
+    id: 'pro',
+    name: 'Pro Monthly',
+    price: '$19.99',
+    description: 'For power users',
+    features: ["500 Credits/mo", "Llama Expert Prompts", "Public Feed"],
+    priceId: 'price_1SlG310ZcMLctEm4DPIgTkyR', // Replace with your actual Stripe ID
+  },
+  {
+    id: 'legend',
+    name: 'Viral Legend',
+    price: '$39.99',
+    description: 'Unlimited creative power',
+    features: ["Unlimited Credits", "Llama Creative Director", "Private Mode (Hidden)"],
+    priceId: 'price_1SlG4r0ZcMLctEm4Nyh0rswZ', // Replace with your actual Stripe ID
+  }
+];
 
 export default function PricingTable() {
   const router = useRouter();
-  const [userTier, setUserTier] = useState<string | null>(null);
-  const [isLegend, setIsLegend] = useState(false);
-  const [loading, setLoading] = useState<string | null>(null); // Track which plan is loading
-
-  // Listen for Auth changes and check tier
-useEffect(() => {
-  const auth = getFirebaseAuth();
-  return onAuthStateChanged(auth, async (currentUser) => {
-    if (currentUser) {
-      console.log("User detected:", currentUser.uid); // Debugging
-      const snap = await getDoc(doc(db, "users", currentUser.uid));
-      if (snap.exists()) {
-        const data = snap.data();
-        setUserTier(data?.tier || 'starter'); // Default to starter
-        setIsLegend(data?.isUnlimited === true);
-      }
-    } else {
-      console.log("No user detected");
-    }
-  });
-}, []);
-
-  const plans = [
-    {
-      name: "Starter",
-      id: "starter",
-      priceId: null,
-      price: "$0",
-      interval: "",
-      features: ["2 One-time Credits", "Llama Basic Expansion", "Public Feed Only"],
-      buttonText: "Get Started Free",
-      highlight: false,
-    },
-    {
-      name: "Pro Monthly",
-      id: "pro",
-      priceId: "price_1SlG310ZcMLctEm4DPIgTkyR", 
-      price: "$19.99",
-      interval: "/mo",
-      features: ["500 Credits/mo", "Llama Expert Prompts", "Public Feed"],
-      buttonText: "Subscribe Pro",
-      highlight: false,
-    },
-    {
-      name: "Viral Legend",
-      id: "legend",
-      priceId: "price_1SlG4r0ZcMLctEm4Nyh0rswZ", 
-      price: "$39.99",
-      interval: "/mo",
-      features: ["Unlimited Credits", "Llama Creative Director", "Private Mode (Hidden)"],
-      buttonText: "Subscribe Legend",
-      highlight: true,
-    }
-  ];
+  const [loading, setLoading] = useState<string | null>(null);
 
   const handleCheckout = async (priceId: string | null, planId: string) => {
-  if (!priceId) {
-    // If it's the free starter plan
-    alert("You are now using the Starter plan! 2 credits have been added to your account.");
-    router.push('/dashboard'); 
-    return;
-  }  
+    const auth = getFirebaseAuth();
+    const user = auth.currentUser;
 
-    setLoading(planId); // Set loading for this specific plan
+    if (!user) {
+      alert("Please sign in first!");
+      return;
+    }
+
+    setLoading(planId);
 
     try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        body: JSON.stringify({ priceId }),
-        headers: { "Content-Type": "application/json" },
-      });
+      if (!priceId || planId === 'starter') {
+        const userRef = doc(db, "users", user.uid);
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          credits: 2,
+          tier: 'starter',
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
 
-      if (!res.ok) {
-        setLoading(null); // Stop loading if error
-        if (res.status === 401) {
-          alert("Please sign in to upgrade your plan.");
-          router.push('/login');
-        } else {
-          const errorData = await res.json().catch(() => ({}));
-          alert(errorData.error || "Checkout failed. Please try again.");
-        }
-        return;
-      }
-
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+        alert("Starter plan activated! 2 credits added.");
+        router.push('/dashboard');
       } else {
-        setLoading(null);
-        alert("Could not initialize Stripe. Try again later.");
-      }
-    } catch (err) {
-      setLoading(null); // Stop loading on network crash
-      console.error("Checkout error:", err);
-      alert("Network error. Please check your connection.");
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priceId, userId: user.uid, userEmail: user.email, planId: planId }),
+        });
+
+        const session = await response.json();
+
+        if (session.url) {
+          window.location.href = session.url;
+        } else {
+          alert("Could not create Stripe session.");
+        }
+      } 
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Something went wrong with the checkout process.");
+    } finally {
+      setLoading(null);
     }
-  };
+  }; // This closes the function correctly
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4 py-12">
-      {plans.map((plan) => {
-        const isCurrentPlan = (plan.id === 'legend' && isLegend) || (plan.id === userTier);
-        const isCurrentlyLoading = loading === plan.id;
-
-        return (
-          <div 
-            key={plan.name} 
-            className={`flex flex-col p-8 rounded-3xl border-2 transition-all ${
-              plan.highlight ? 'bg-white border-blue-600 shadow-2xl scale-105' : 'bg-white border-gray-200'
-            }`}
-          >
-            <h3 className="text-2xl font-black text-zinc-950">{plan.name}</h3>
-            
-            <div className="my-6">
-              <span className="text-5xl font-black text-zinc-950">{plan.price}</span>
-              <span className="text-zinc-500 text-lg font-bold">{plan.interval}</span>
+    <div className="max-w-7xl mx-auto py-12 px-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {plans.map((plan) => (
+          <div key={plan.id} className="border border-zinc-800 bg-zinc-900/50 p-8 rounded-2xl flex flex-col">
+            <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
+            <div className="mt-4 flex items-baseline text-white">
+              <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
             </div>
-
-            <ul className="space-y-4 mb-8 flex-grow">
-              {plan.features.map(feat => (
-                <li key={feat} className="flex items-center gap-2 text-sm font-extrabold text-zinc-800">
-                  <span className="text-blue-600">✅</span> {feat}
+            <p className="mt-2 text-zinc-400">{plan.description}</p>
+            
+            <ul className="mt-6 space-y-4 flex-1">
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex text-zinc-300 text-sm">
+                  <span className="text-green-500 mr-2">✓</span> {feature}
                 </li>
               ))}
             </ul>
 
-            <button 
-              onClick={() => !isCurrentPlan && !isCurrentlyLoading && handleCheckout(plan.priceId, plan.id)} 
-              disabled={isCurrentPlan || !!loading}
-              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all flex justify-center items-center ${
-                isCurrentPlan 
-                  ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed border-2 border-zinc-200' 
-                  : plan.highlight 
-                    ? 'bg-blue-600 text-white shadow-lg hover:bg-blue-700' 
-                    : 'bg-black text-white hover:bg-zinc-800'
-              } ${loading && !isCurrentlyLoading ? 'opacity-50 cursor-wait' : ''}`}
+            <button
+              onClick={() => handleCheckout(plan.priceId, plan.id)}
+              disabled={loading !== null}
+              className={`mt-8 w-full py-3 px-4 rounded-xl font-semibold transition-all ${
+                plan.id === 'pro' 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-zinc-100 hover:bg-zinc-200 text-black'
+              }`}
             >
-              {isCurrentPlan ? "CURRENT PLAN" : isCurrentlyLoading ? "LOADING..." : plan.buttonText}
+              {loading === plan.id ? "Processing..." : `Choose ${plan.name}`}
             </button>
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }
+

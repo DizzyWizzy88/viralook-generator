@@ -2,32 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #__next {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  background-color: #070707;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+
+  * {
+    /* Using standard CSS to avoid the 'unknown utility' error */
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: #070707;
+    color: hsl(var(--foreground));
+  }
 }
 
-/* Prevents the 'gray highlight' on mobile taps */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Custom scrollbar for that Pro Studio look */
-::-webkit-scrollbar {
-  width: 5px;
-}
-::-webkit-scrollbar-track {
-  background: #070707;
-}
-::-webkit-scrollbar-thumb {
-  background: #222;
-  border-radius: 10px;
-}
 @layer components {
-  /* 1. Summoning Text Shimmer */
   .summoning-shimmer {
     background: linear-gradient(90deg, #555, #fff, #555);
     background-size: 200% auto;
@@ -36,7 +40,6 @@ html, body, #__next {
     animation: textShimmer 3s linear infinite;
   }
 
-  /* 2. Viral Legend Border Beam */
   .border-beam-card {
     position: relative;
     overflow: hidden;
@@ -45,126 +48,12 @@ html, body, #__next {
   .border-beam-card::before {
     content: "";
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
     background: conic-gradient(transparent, #7400ff, #00f2ff, transparent 30%);
     animation: rotate-beam 4s linear infinite;
   }
-
-  /* Keeps the card content dark inside the beam */
-  .card-inner-content {
-    position: relative;
-    background: #0a0a0a;
-    z-index: 10;
-    margin: 2px; /* This defines the thickness of the beam */
-    border-radius: inherit;
-  }
 }
 
-@keyframes textShimmer {
-  to { background-position: 200% center; }
-}
-
-@keyframes rotate-beam {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@layer components {
-  .border-beam-card {
-    position: absolute;
-    inset: 0;
-    border: 2px solid transparent;
-    background: linear-gradient(black, black) padding-box,
-                linear-gradient(90deg, #4f46e5, #9333ea, #06b6d4, #4f46e5) border-box;
-    background-size: 200% 100%;
-    animation: border-beam 4s linear infinite;
-  }
-
-  .summoning-shimmer {
-    background: linear-gradient(90deg, #52525b, #ffffff, #52525b);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shimmer 3s linear infinite;
-  }
-
-  @keyframes border-beam {
-    to { background-position: 200% center; }
-  }
-
-  @keyframes shimmer {
-    to { background-position: 200% center; }
-  }
-}
-
-
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-  }
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-}
-
-
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+@keyframes textShimmer { to { background-position: 200% center; } }
+@keyframes rotate-beam { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
