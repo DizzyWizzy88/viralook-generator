@@ -68,7 +68,7 @@ export default function ImageGallery() {
             className="relative break-inside-avoid rounded-3xl overflow-hidden border border-white/5 bg-zinc-900 group cursor-pointer animate-in fade-in slide-in-from-bottom-4 duration-700"
           >
             <img 
-              src={img.imageUrl || img.url} 
+              src={img.imageUrl || (img as any.url} 
               alt="" // Leaving this empty hides the broken text box
               className="w-full h-auto transition-transform duration-700 group-hover:scale-110"
               loading="lazy"
