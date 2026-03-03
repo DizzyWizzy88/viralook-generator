@@ -52,3 +52,4 @@ keystore.properties
 service-account.json
 node_modules
 .next
+.env*.local
