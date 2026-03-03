@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Record in Global Feed
-    const adminDb = getAdminDb(); // CHANGED: Get the DB instance
+    const adminDb = getAdminDb()!; // CHANGED: Get the DB instance
     
     await adminDb.collection("global_feed").add({
       prompt: userPrompt,
