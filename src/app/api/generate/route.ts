@@ -1,10 +1,6 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebaseAdmin";
-import { fal } from "@fal-ai/client";
-import { Transaction } from "firebase-admin/firestore";
+import { getAdminDb } from "@/lib/firebaseAdmin"; // CHANGED: Using getAdminDb
 
-// Llama 3.1 Prompt Expansion via Groq
 async function enhancePromptWithLlama(userPrompt: string) {
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -14,18 +10,18 @@ async function enhancePromptWithLlama(userPrompt: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-70b-versatile",
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
             role: "system",
-            content: "You are an expert prompt engineer. Expand the user's simple prompt into a cinematic, highly detailed masterpiece description for an AI image generator. Keep it under 75 words."
+            content: "You are a prompt engineer. Expand the user's simple image prompt into a highly detailed, cinematic description for an AI image generator. Keep it under 75 words.",
           },
-          { role: "user", content: userPrompt }
+          { role: "user", content: userPrompt },
         ],
       }),
     });
     const data = await response.json();
-    return data.choices[0].message.content;
+    return data.choices?.[0]?.message?.content || userPrompt;
   } catch (error) {
     console.error("Llama expansion failed, falling back to original:", error);
     return userPrompt;
@@ -33,92 +29,54 @@ async function enhancePromptWithLlama(userPrompt: string) {
 }
 
 export async function POST(req: Request) {
-  const adminDb = getAdminDb();
-  
   try {
-    if (!adminDb) {
-      console.error("Firebase Admin DB not initialized");
-      return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
+    const { prompt: userPrompt, userId, userEmail } = await req.json();
+
+    if (!userPrompt) {
+      return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
     }
 
-    const { prompt, userId, userName, userEmail } = await req.json();
+    // 1. Expand Prompt with Llama
+    const enhancedPrompt = await enhancePromptWithLlama(userPrompt);
 
-    if (!prompt || !userId) {
-      return NextResponse.json({ error: "Missing prompt or userId" }, { status: 400 });
-    }
-
-    const userRef = adminDb.collection("users").doc(userId);
-
-    // ATOMIC TRANSACTION: Handles New Users (2 credits) & Deductions
-    const transactionResult = await adminDb.runTransaction(async (transaction: Transaction) => {
-      // Cast to 'any' to resolve the '.exists' TypeScript build error
-      const userDoc = (await transaction.get(userRef)) as any;
-
-      if (!userDoc.exists) {
-        // NEW USER: Start with 2 credits, deduct 1 for this generation
-        const newUser = {
-          email: userEmail || "No Email Provided",
-          credits: 1, 
-          createdAt: new Date().toISOString(),
-        };
-        transaction.set(userRef, newUser);
-        return { canGenerate: true };
-      }
-
-      const userData = userDoc.data();
-      const currentCredits = userData?.credits || 0;
-
-      if (currentCredits < 1 && !userData?.isUnlimited) {
-        return { canGenerate: false };
-      }
-
-      // Deduct 1 Credit
-      if (!userData?.isUnlimited) {
-        transaction.update(userRef, { credits: currentCredits - 1 });
-      }
-      
-      return { canGenerate: true };
-    });
-
-    if (!transactionResult.canGenerate) {
-      return NextResponse.json(
-        { error: "Out of credits", shouldRedirect: true }, 
-        { status: 403 }
-      );
-    }
-
-    // AI Generation Workflow
-    const enhancedPrompt = await enhancePromptWithLlama(prompt);
-
-    const falResult: any = await fal.subscribe("fal-ai/flux/schnell", {
-      input: {
+    // 2. Generate Image with Fal.ai
+    const falResponse = await fetch("https://fal.run/fal-ai/flux/schnell", {
+      method: "POST",
+      headers: {
+        "Authorization": `Key ${process.env.FAL_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         prompt: enhancedPrompt,
         image_size: "landscape_4_3",
         num_inference_steps: 4,
-      },
-      logs: true,
+        enable_safety_checker: true,
+      }),
     });
 
-    const imageUrl = falResult.images[0].url;
+    const falResult = await falResponse.json();
+    const imageUrl = falResult.images?.[0]?.url;
 
-    // Record in Global Feed
+    if (!imageUrl) {
+      console.error("Fal.ai failed:", falResult);
+      return NextResponse.json({ error: "AI service failed to generate image" }, { status: 500 });
+    }
+
+    // 3. Record in Global Feed
+    const adminDb = getAdminDb(); // CHANGED: Get the DB instance
+    
     await adminDb.collection("global_feed").add({
-      userId,
-      userName: userName || "Anonymous Creator",
-      originalPrompt: prompt,
+      prompt: userPrompt,
       enhancedPrompt,
       imageUrl,
+      userId: userId || "anonymous", // FIX: Prevent "undefined" crash
+      userEmail: userEmail || "no-email@provided.com", // FIX: Prevent "undefined" crash
       createdAt: new Date().toISOString(),
     });
 
-    return NextResponse.json({
-      imageUrl,
-      enhancedPrompt,
-      success: true
-    });
-
+    return NextResponse.json({ imageUrl, enhancedPrompt });
   } catch (error: any) {
-    console.error("Route Error:", error);
-    return NextResponse.json({ error: "Generation failed" }, { status: 500 });
+    console.error("Generation Error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
