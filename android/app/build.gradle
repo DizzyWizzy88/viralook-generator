@@ -2,35 +2,24 @@ apply plugin: 'com.android.application'
 
 android {
     namespace "com.viralook.generator"
-    compileSdk 35
-
-    signingConfigs {
-        release {
-            storeFile file("/home/dizzywizzy88/my-release-key.jks")
-            storePassword "Deftones1!" 
-            keyAlias "my-key-alias"
-            keyPassword "Deftones1!"
-        }
-    }
-
+    compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.viralook.generator"
         minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion 35
-        versionCode 10
-        versionName "2.5"
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-
     buildTypes {
         release {
-            signingConfig signingConfigs.release 
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -42,25 +31,24 @@ repositories {
 }
 
 dependencies {
-    constraints {
-        implementation("org.jetbrains.kotlin-stdlib-jdk7:1.8.0") {
-            because("kotlin-stdlib-jdk7 is now part of kotlin-stdlib")
-        }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0") {
-            because("kotlin-stdlib-jdk8 is now part of kotlin-stdlib")
-        }
-    }
-
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    
 }
 
 apply from: 'capacitor.build.gradle'
 
-// Standard Firebase apply (safe way)
-apply plugin: 'com.google.gms.google-services'
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

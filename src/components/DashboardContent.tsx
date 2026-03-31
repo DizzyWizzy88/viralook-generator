@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image'; // Required for the logo
+import { useSearchParams } from 'next/navigation';
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
@@ -15,8 +16,10 @@ import LoadingBar from './LoadingBar';
 export default function DashboardContent() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const auth = getFirebaseAuth();
   const db = getFirebaseDb();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -39,6 +42,18 @@ export default function DashboardContent() {
 
     return () => unsubscribe();
   }, [auth, db]);
+
+  useEffect(() => {
+    // Check for login success message
+    const loginParam = searchParams.get('login');
+    if (loginParam === 'success') {
+      setLoginMessage('Welcome back! You have successfully logged in.');
+      // Clear the URL parameter after showing the message
+      const url = new URL(window.location.href);
+      url.searchParams.delete('login');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -81,6 +96,13 @@ export default function DashboardContent() {
 
         <CreditBadge/>
       </header>
+
+      {/* LOGIN SUCCESS MESSAGE */}
+      {loginMessage && (
+        <div className="max-w-4xl mx-auto mb-8 p-4 bg-green-900/20 border border-green-500/30 rounded-lg text-green-400 text-center">
+          {loginMessage}
+        </div>
+      )}
 
       {/* MAIN CONTENT: Vertical Stack */}
       <main className="max-w-4xl mx-auto flex flex-col gap-12">

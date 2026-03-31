@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // <--- Triple check this path!
+import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
 
 export default function CreditBadge() {
   const [credits, setCredits] = useState<number | null>(null);
 
   useEffect(() => {
-    const auth = getAuth();
+    const auth = getFirebaseAuth();
+    const db = getFirebaseDb();
     
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {

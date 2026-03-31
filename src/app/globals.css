@@ -1,6 +1,8 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 @layer base {
   :root {
@@ -35,6 +37,8 @@
   .summoning-shimmer {
     background: linear-gradient(90deg, #555, #fff, #555);
     background-size: 200% auto;
+    /* Add the standard property alongside the webkit version */
+    background-clip: text; 
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: textShimmer 3s linear infinite;

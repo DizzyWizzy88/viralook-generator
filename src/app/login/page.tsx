@@ -1,134 +1,63 @@
 "use client";
 
-import { useState } from "react";
-import { getFirebaseAuth } from "@/lib/firebase"; 
-import { 
-  signInWithEmailAndPassword, 
-  GoogleAuthProvider, 
-  signInWithPopup 
-} from "firebase/auth";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import React from 'react';
+import { SocialLogin } from '@capgo/capacitor-social-login';
+import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase'; 
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const auth = getFirebaseAuth();
-
-  // 1. Handle Email/Password Login (Required for Google Reviewer)
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError("Invalid email or password. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 2. Handle Google Login (For regular users)
   const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError("");
-    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError("Google sign-in failed. Please try again.");
-    } finally {
-      setLoading(false);
+      // 1. Trigger the NATIVE Android Google Picker
+      const result = await (SocialLogin as any).login({
+        provider: 'google',
+        options: {
+          clientId: '994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com',
+          scopes: ['profile', 'email']
+        },
+      });
+
+      // ✅ THE FIX: @ts-ignore tells the compiler to shut its eyes for the next line
+      // @ts-ignore
+      const googleToken = result.result?.idToken || result.result?.token || (result.result as any)?.token;
+
+      if (googleToken) {
+        const auth = getFirebaseAuth();
+        const credential = GoogleAuthProvider.credential(googleToken);
+        const authResult = await signInWithCredential(auth, credential);
+        const user = authResult.user;
+        
+        // Create user in Firestore if they don't exist
+        const db = getFirebaseDb();
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            email: user.email,
+            credits: 2,
+            createdAt: serverTimestamp(),
+            isUnlimited: false
+          });
+        }
+        
+        console.log("✅ Native Login Success!");
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error("❌ Login failed:", error);
     }
   };
-
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white p-4">
-      <div className="w-full max-w-md space-y-6 bg-zinc-900 p-8 rounded-2xl border border-zinc-800 shadow-2xl">
-        
-        <div className="text-center">
-          <Link href="/" className="text-xs text-zinc-500 hover:text-white transition-colors mb-4 inline-block">
-            ← Back to Home
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Viralook</h1>
-          <p className="text-zinc-400 mt-2 text-sm">Sign in to your account</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
-            {error}
-          </div>
-        )}
-
-        {/* Traditional Form */}
-        <form onSubmit={handleEmailLogin} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-zinc-400 uppercase ml-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              placeholder="name@example.com"
-              required
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-zinc-400 uppercase ml-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50"
-          >
-            {loading ? "Authenticating..." : "Sign In"}
-          </button>
-        </form>
-
-        {/* New Navigation Links */}
-        <div className="flex justify-between px-1 text-sm">
-          <Link href="/forgot-password" title="Reset your password" className="text-zinc-400 hover:text-white transition-colors">
-            Forgot Password?
-          </Link>
-          <Link href="/signup" title="Create a new account" className="text-blue-500 hover:text-blue-400 font-medium transition-colors">
-            Create Account
-          </Link>
-        </div>
-
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-800"></div></div>
-          <div className="relative flex justify-center text-xs uppercase"><span className="bg-zinc-900 px-2 text-zinc-500">Or continue with</span></div>
-        </div>
-
-        {/* Google Button */}
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-3 rounded-lg hover:bg-zinc-100 transition-all disabled:opacity-50"
-        >
-          <img 
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-            alt="Google logo" 
-            className="w-5 h-5" 
-          />
-          Sign In with Google
-        </button>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#070707] text-white">
+      <button onClick={handleGoogleLogin} className="bg-white text-black px-10 py-4 rounded-2xl font-black uppercase text-[11px]">
+        Sign in with Google
+      </button>
     </div>
   );
 }

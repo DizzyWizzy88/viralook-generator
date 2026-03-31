@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
+import { getFirebaseDb } from '@/lib/firebase';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { Loader2, Globe, ZoomIn } from 'lucide-react';
 
@@ -18,6 +18,7 @@ export default function ImageGallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const db = getFirebaseDb();
     // Query the global_feed collection, newest first
     const q = query(
       collection(db, "global_feed"),
