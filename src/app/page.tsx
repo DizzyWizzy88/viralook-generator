@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { SocialLogin } from '@capgo/capacitor-social-login';
+import { Capacitor } from '@capacitor/core';
 import { getFirebaseAuth } from '@/lib/firebase'; 
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signInWithPopup } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -12,23 +13,33 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       const auth = getFirebaseAuth();
-      // ✅ THE NUCLEAR FIX: Cast SocialLogin as any to bypass clientId type check
-      const result = await (SocialLogin as any).login({
-        provider: 'google',
-        options: {
-          clientId: '994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com',
-          scopes: ['profile', 'email']
-        },
-      });
+      let isLoggedIn = false;
 
-      // ✅ FLEXIBLE TOKEN EXTRACTION
-      const googleToken = result?.result?.token || result?.result?.idToken || (result?.result as any)?.token;
+      if (Capacitor.isNativePlatform()) {
+        // Native mobile login
+        const result = await (SocialLogin as any).login({
+          provider: 'google',
+          options: {
+            clientId: '994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com',
+            scopes: ['profile', 'email']
+          },
+        });
 
-      if (googleToken) {
-        const credential = GoogleAuthProvider.credential(googleToken);
-        await signInWithCredential(auth, credential);
-        
-        console.log("✅ Native Login Success!");
+        const googleToken = result?.result?.token || result?.result?.idToken || (result?.result as any)?.token;
+        if (googleToken) {
+          const credential = GoogleAuthProvider.credential(googleToken);
+          await signInWithCredential(auth, credential);
+          isLoggedIn = true;
+        }
+      } else {
+        // Browser login should use Firebase popup auth, not native redirect flow.
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        isLoggedIn = true;
+      }
+
+      if (isLoggedIn) {
+        console.log("✅ Login Success!");
         router.push('/dashboard');
       }
     } catch (error) {

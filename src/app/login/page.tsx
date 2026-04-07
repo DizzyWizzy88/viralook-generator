@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { SocialLogin } from '@capgo/capacitor-social-login';
+import { Capacitor } from '@capacitor/core';
 import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase'; 
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signInWithPopup, User } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
@@ -12,42 +13,50 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
-      // 1. Trigger the NATIVE Android Google Picker
-      const result = await (SocialLogin as any).login({
-        provider: 'google',
-        options: {
-          clientId: '994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com',
-          scopes: ['profile', 'email']
-        },
-      });
+      const auth = getFirebaseAuth();
+      let user: User | null = null;
 
-      // ✅ THE FIX: @ts-ignore tells the compiler to shut its eyes for the next line
-      // @ts-ignore
-      const googleToken = result.result?.idToken || result.result?.token || (result.result as any)?.token;
+      if (Capacitor.isNativePlatform()) {
+        const result = await (SocialLogin as any).login({
+          provider: 'google',
+          options: {
+            clientId: '994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com',
+            scopes: ['profile', 'email']
+          },
+        });
 
-      if (googleToken) {
-        const auth = getFirebaseAuth();
-        const credential = GoogleAuthProvider.credential(googleToken);
-        const authResult = await signInWithCredential(auth, credential);
-        const user = authResult.user;
-        
-        // Create user in Firestore if they don't exist
-        const db = getFirebaseDb();
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            email: user.email,
-            credits: 2,
-            createdAt: serverTimestamp(),
-            isUnlimited: false
-          });
+        // ✅ THE FIX: @ts-ignore tells the compiler to shut its eyes for the next line
+        // @ts-ignore
+        const googleToken = result.result?.idToken || result.result?.token || (result.result as any)?.token;
+
+        if (googleToken) {
+          const credential = GoogleAuthProvider.credential(googleToken);
+          const authResult = await signInWithCredential(auth, credential);
+          user = authResult.user;
         }
-        
-        console.log("✅ Native Login Success!");
-        router.push('/dashboard');
+      } else {
+        const provider = new GoogleAuthProvider();
+        const authResult = await signInWithPopup(auth, provider);
+        user = authResult.user;
       }
+
+      if (!user) return;
+
+      const db = getFirebaseDb();
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          email: user.email,
+          credits: 2,
+          createdAt: serverTimestamp(),
+          isUnlimited: false
+        });
+      }
+
+      console.log("✅ Login Success!");
+      router.push('/dashboard');
     } catch (error) {
       console.error("❌ Login failed:", error);
     }
