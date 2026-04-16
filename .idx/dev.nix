@@ -16,11 +16,11 @@
       enable = true;
       previews = {
         android = {
-          # Notice: No commas between the strings below
-          command = [ "npx" "cap" "run" "android" "--target" "emulator-5554" ];
+          # Simplified command for faster boot
+          command = [ "npx" "cap" "run" "android" ];
           manager = "android";
         };
       };
-    };
+   };
   };
 }
