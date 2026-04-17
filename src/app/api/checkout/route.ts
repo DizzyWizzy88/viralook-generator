@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/server/stripe";
 import { headers } from "next/headers"; // Add this import

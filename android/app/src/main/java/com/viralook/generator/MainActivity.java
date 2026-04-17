@@ -2,14 +2,18 @@ package com.viralook.generator;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
-import com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth; // <--- Import the plugin
+import com.getcapacitor.Plugin;
+import java.util.ArrayList;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // This line registers the plugin so it can intercept the login call
-        registerPlugin(GoogleAuth.class);
+
+        // Initializes the Bridge
+        this.init(savedInstanceState, new ArrayList<Class<? extends Plugin>>() {{
+            // Additional plugins you've installed go here
+            // Ex: add(TotallyAwesomePlugin.class);
+        }});
     }
 }

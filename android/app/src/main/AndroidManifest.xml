@@ -12,27 +12,23 @@
         <meta-data 
             android:name="com.google.android.gms.version" 
             android:value="@integer/google_play_services_version" />
-        
-        <meta-data 
-            android:name="com.codetrixstudio.capacitor.GoogleAuth.server_client_id" 
-            android:value="994498276710-kriv0t2p1o82v59s7el0q65705u6kmgd.apps.googleusercontent.com" />
 
         <activity
-          <intent-filter android:autoVerify="true">
-             <action android:name="android.intent.action.VIEW" />
-             <category android:name="android.intent.category.DEFAULT" />
-             <category android:name="android.intent.category.BROWSABLE" />
-             <data android:scheme="com.viralook.generator" />
-             <data android:scheme="https" android:host="rapid-digit-480820-s5.firebaseapp.com" />
-          </intent-filter>
+            android:name=".MainActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|screenLayout|smallestScreenSize"
+            android:label="@string/title_activity_main"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
         </activity>
 
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
-    
-    <queries>
-        <package android:name="com.google.android.gms" />
-    </queries>
 
 </manifest>
