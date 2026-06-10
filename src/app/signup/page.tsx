@@ -3,7 +3,6 @@ import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
-import { Sparkles } from "lucide-react";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +23,6 @@ export default function SignUpPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // This part is crucial for your credits system!
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         credits: 2, 
@@ -41,48 +39,75 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <div className="inline-block p-3 bg-blue-600 rounded-xl mb-4">
-            <Sparkles className="text-white" />
-          </div>
-          <h2 className="text-3xl font-black uppercase italic">Create Account</h2>
-          <p className="text-zinc-500 text-xs tracking-widest uppercase mt-2">Start with 2 free credits</p>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans antialiased">
+      <div className="w-full max-w-[360px] flex flex-col items-stretch">
+        
+        {/* BRAND LOGO HEADER */}
+        <div className="flex flex-col items-center mb-10">
+          <Link to="/" className="transition-opacity hover:opacity-80 block">
+            <div className="w-24 h-24 flex items-center justify-center overflow-hidden">
+              <img 
+                src="/Viralook.png" 
+                alt="Viralook Generator" 
+                className="w-full h-full object-contain" 
+              />
+            </div>
+          </Link>
+          <h1 className="text-[11px] font-medium tracking-[0.4em] text-zinc-400 uppercase mt-4 text-center">
+            NEW USER SETUP
+          </h1>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
+          <div className="border border-red-500/30 bg-red-500/5 px-4 py-3 rounded mb-6 text-red-400 text-[11px] tracking-wide text-center uppercase font-medium">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSignUp} className="space-y-4">
-          <input 
-            type="email" 
-            placeholder="EMAIL" 
-            className="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl outline-none focus:border-blue-500 transition-all" 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-          />
-          <input 
-            type="password" 
-            placeholder="PASSWORD" 
-            className="w-full bg-zinc-900 border border-white/5 p-4 rounded-xl outline-none focus:border-blue-500 transition-all" 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
+        {/* INPUT FORM */}
+        <form onSubmit={handleSignUp} className="flex flex-col space-y-3">
+          <div className="relative">
+            <input 
+              type="email" 
+              placeholder="EMAIL ADDRESS" 
+              className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-zinc-500 px-4 py-3.5 rounded text-[11px] text-white placeholder-zinc-600 outline-none transition-colors tracking-widest font-medium"
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
+          </div>
+          
+          <div className="relative">
+            <input 
+              type="password" 
+              placeholder="PASSWORD" 
+              className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-zinc-500 px-4 py-3.5 rounded text-[11px] text-white placeholder-zinc-600 outline-none transition-colors tracking-widest font-medium"
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
+          </div>
+
           <button 
             type="submit" 
             disabled={loading} 
-            className="w-full bg-white text-black font-black py-4 rounded-xl uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-50"
+            className="w-full bg-white hover:bg-zinc-200 text-black font-bold h-11 rounded text-[11px] tracking-[0.2em] uppercase transition-colors duration-150 flex items-center justify-center mt-4 disabled:opacity-50"
           >
-            {loading ? "Registering..." : "Join Studio"}
+            {loading ? "CREATING..." : "CREATE ACCOUNT"}
           </button>
         </form>
-        <p className="text-center text-[10px] text-zinc-500 uppercase tracking-widest">
-          Already a member? <Link to="/login" className="text-white underline">Log In</Link>
-        </p>
+
+        {/* FOOTER */}
+        <div className="mt-8 pt-6 border-t border-zinc-900 flex flex-col items-center space-y-2">
+          <p className="text-[10px] text-zinc-500 tracking-widest uppercase text-center">
+            New accounts receive 2 complimentary credits
+          </p>
+          <p className="text-[11px] tracking-wide text-zinc-400">
+            Already registered?{" "}
+            <Link to="/login" className="text-white hover:underline underline-offset-4 transition-all font-medium">
+              Log in
+            </Link>
+          </p>
+        </div>
+
       </div>
     </div>
   );
