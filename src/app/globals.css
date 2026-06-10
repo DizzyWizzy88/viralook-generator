@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+
+  * {
+    /* Using standard CSS to avoid the 'unknown utility' error */
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: #070707;
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  .summoning-shimmer {
+    background: linear-gradient(90deg, #555, #fff, #555);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShimmer 3s linear infinite;
+  }
+
+  .border-beam-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .border-beam-card::before {
+    content: "";
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(transparent, #7400ff, #00f2ff, transparent 30%);
+    animation: rotate-beam 4s linear infinite;
+  }
+}
+
+@keyframes textShimmer { to { background-position: 200% center; } }
+@keyframes rotate-beam { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
