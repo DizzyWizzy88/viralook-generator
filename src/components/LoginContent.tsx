@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from 'react';
 import { 
   signInWithEmailAndPassword, 
@@ -12,17 +10,15 @@ import {
   setDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase'; // Fixed Import
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase'; 
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +28,7 @@ export default function LoginContent() {
     try {
       const auth = getFirebaseAuth();
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      navigate("/dashboard");
     } catch (err: any) {
       setError("Invalid email or password.");
     } finally {
@@ -49,7 +45,6 @@ export default function LoginContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user exists in Firestore, if not, create them with 2 credits
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -61,7 +56,7 @@ export default function LoginContent() {
           isUnlimited: false
         });
       }
-      router.push("/dashboard");
+      navigate("/dashboard");
     } catch (err: any) {
       setError("Google sign-in failed.");
     }
@@ -70,13 +65,20 @@ export default function LoginContent() {
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <div className="inline-block p-3 bg-zinc-900 rounded-2xl mb-4 border border-white/5">
-            <Sparkles className="text-blue-500" />
-          </div>
-          <h2 className="text-3xl font-black uppercase italic tracking-tighter">Welcome Back</h2>
+        
+        {/* BRAND LOGO HEADER */}
+        <div className="text-center flex flex-col items-center">
+          <Link to="/" className="transition-opacity hover:opacity-90 block mb-2">
+            <div className="w-48 max-w-[200px] aspect-square flex items-center justify-center overflow-hidden">
+              <img 
+                src="/Viralook.png" 
+                alt="Viralook Generator Logo" 
+                className="w-full h-full object-contain" 
+              />
+            </div>
+          </Link>
           <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Enter the studio</p>
-        </div>
+        </div> {/* <-- ADDED THIS FIXED CLOSING TAG TO SEPARATE LOGO FROM FORM */}
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-500 text-[10px] font-black uppercase tracking-widest text-center">
@@ -121,7 +123,7 @@ export default function LoginContent() {
         </button>
 
         <p className="text-center text-[10px] text-zinc-500 uppercase tracking-widest">
-          New here? <Link href="/signup" className="text-white underline">Create Account</Link>
+          New here? <Link to="/signup" className="text-white underline">Create Account</Link>
         </p>
       </div>
     </div>
