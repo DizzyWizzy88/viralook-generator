@@ -36,6 +36,7 @@
     background: linear-gradient(90deg, #555, #fff, #555);
     background-size: 200% auto;
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: textShimmer 3s linear infinite;
   }
@@ -48,12 +49,27 @@
   .border-beam-card::before {
     content: "";
     position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
     background: conic-gradient(transparent, #7400ff, #00f2ff, transparent 30%);
     animation: rotate-beam 4s linear infinite;
   }
 }
 
-@keyframes textShimmer { to { background-position: 200% center; } }
-@keyframes rotate-beam { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes textShimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+
+@keyframes rotate-beam {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
