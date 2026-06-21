@@ -1,28 +1,25 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* 💡 Safety Fallback: Force text layers to remain visible if utility builds lag */
+/* 💡 Safety Fallback: Force baseline colors while matching your studio aesthetic */
 body {
-  background-color: #000000 !important;
-  color: #ffffff !important;
+  background-color: #000000;
+  color: #ffffff;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
 input {
-  background-color: #09090b !important;
-  border: 1px solid #27272a !important;
-  color: #ffffff !important;
-  border-radius: 0.25rem !important;
+  background-color: #09090b;
+  border: 1px solid #27272a;
+  color: #ffffff;
+  border-radius: 0.25rem;
 }
 
 span,
-p,
-a {
-  color: #a1a1aa !important;
+p {
+  color: #a1a1aa;
 }
 
 a {
-  text-decoration: underline !important;
-  color: #ffffff !important;
+  text-decoration: underline;
+  color: #ffffff;
 }

@@ -4,14 +4,14 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
-// Inside Vite, environment variables must start with VITE_
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyDnaReQsnTgGMU_L5Q3a0S21GcBwG-PtSM",
+  // 💡 ADD THIS EXACT LINE RIGHT HERE:
+  authDomain: "rapid-digit-480820-s5.firebaseapp.com", 
+  projectId: "rapid-digit-480820-s5",
+  storageBucket: "rapid-digit-480820-s5.firebasestorage.app",
+  messagingSenderId: "994498276710",
+  appId: "1:994498276710:web:d8dfbba34493390cc93e11" // Use your real app ID from Firebase console if known
 };
 
 // Initialize Firebase safely for SPA client-side reload
@@ -21,7 +21,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Helper functions matching your components' exact import expectations
-export function getFirebaseAuth() { return auth; }
-export function getFirebaseDb() { return db; }
+// Explicit named exports matching your components' exact import statements
+export function getFirebaseAuth() {
+  return auth;
+}
+
+export function getFirebaseDb() {
+  return db;
+}
+
 export { app, auth, db, storage };

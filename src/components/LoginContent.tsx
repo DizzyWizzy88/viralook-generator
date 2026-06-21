@@ -10,7 +10,7 @@ import {
   setDoc,
   serverTimestamp
 } from 'firebase/firestore';
-import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
+import { getFirebaseAuth, getFirebaseDb } from '../lib/firebase';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function LoginContent() {
@@ -30,6 +30,11 @@ export default function LoginContent() {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/dashboard");
     } catch (err: any) {
+      // 💡 Added debugging logs to print the real Firebase rejection message to the inspect console
+      console.error("🔥 LOGIN FAILED:", err);
+      console.error("Code:", err.code);
+      console.error("Message:", err.message);
+      
       setError("Invalid email or password.");
     } finally {
       setLoading(false);
@@ -39,7 +44,11 @@ export default function LoginContent() {
   const handleGoogleLogin = async () => {
     const auth = getFirebaseAuth();
     const db = getFirebaseDb();
+
+    console.log("RUNTIME FIREBASE OPTIONS:", auth.app.options);
+
     const provider = new GoogleAuthProvider();
+    setError("");
 
     try {
       const result = await signInWithPopup(auth, provider);
@@ -58,6 +67,9 @@ export default function LoginContent() {
       }
       navigate("/dashboard");
     } catch (err: any) {
+      // 💡 Added debugging logs here as well to capture popup/network errors
+      console.error("🔥 GOOGLE AUTH FAILED:", err);
+      
       setError("Google sign-in failed.");
     }
   };
@@ -125,7 +137,6 @@ export default function LoginContent() {
         {/* GOOGLE AUTHENTICATION LINK WITH EXPANDED GAP SPACING */}
         <button 
           onClick={handleGoogleLogin}
-          // 💡 Changed "gap-3" to "gap-4" to inject that extra breathing room
           className="w-full bg-zinc-900 border border-white/5 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-800 transition-all flex items-center justify-center gap-4 group"
         >
           <img 
