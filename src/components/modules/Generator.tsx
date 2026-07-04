@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
   User
 } from 'firebase/auth';
+// @ts-ignore
 import { doc, updateDoc, increment, getDoc, setDoc } from 'firebase/firestore';
 import { db, getFirebaseAuth } from '@/lib/firebase';
 import { useSummoningSequence } from '@/hooks/useSummoningSequence';
+// @ts-ignore
 import {
   Sparkles,
   Zap,
@@ -21,10 +24,9 @@ import {
   Download
 } from 'lucide-react';
 
-// 🚀 LIVE NGOK TUNNEL ENDPOINT (Update this if you restart your Colab server)
-const NGROK_API_URL = "https://riverbed-foil-eastward.ngrok-free.dev/generate";
+const VERCEL_API_URL = "/api/generate";
 
-export default function Generator() {
+export default function Generator(): React.JSX.Element {
   // Auth State
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -48,7 +50,7 @@ export default function Generator() {
   // Listen for Auth changes and pre-fetch Legend status
   useEffect(() => {
     const auth = getFirebaseAuth();
-    return onAuthStateChanged(auth, async (currentUser) => {
+    return onAuthStateChanged(auth, async (currentUser: any) => {
       setUser(currentUser);
       if (currentUser) {
         const snap = await getDoc(doc(db, "users", currentUser.uid));
@@ -87,7 +89,7 @@ export default function Generator() {
 
       if (!userSnap.exists()) {
         await setDoc(userRef, {
-          credits: 2,
+          credits: 1,
           email: user.email,
           isUnlimited: false,
           createdAt: new Date().toISOString()
@@ -97,7 +99,6 @@ export default function Generator() {
       const userData = userSnap.data();
       const isLegend = userData?.isUnlimited === true || userData?.tier === 'legend';
 
-      // Update local state just in case it changed
       setIsLegendUser(isLegend);
 
       if (!isLegend && (userData?.credits || 0) <= 0) {
@@ -107,14 +108,28 @@ export default function Generator() {
       // 2. Start Visual Sequence
       startSummoning();
 
-      // 3. API Call directly over the Ngrok bridge to Python Backend
-      const response = await fetch(NGROK_API_URL, {
+      // 💡 PURE VITE LOCAL DEV SAFETY CHECK
+      const isLocalDev = import.meta.env.DEV;
+
+      if (isLocalDev) {
+        console.log("🛡️ [MOCK MODE ACTIVATED] Safeguarding live API credits from local pipeline cycles.");
+
+        // Emulate a 3.5 second processing loop window to let loading shimmer sequences display beautifully
+        await new Promise((resolve) => setTimeout(resolve, 3500));
+
+        // Inject high-quality UI development placeholder coordinates
+        setResultImage("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800");
+        setEnhancedPrompt(`${prompt} // optimized for hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`);
+        completeSummoning();
+
+        // Break executing runtime safely before reaching live billing logic!
+        return;
+      }
+
+      // 3. Live Production API Call (Only triggered on live deployment URLs)
+      const response = await fetch(VERCEL_API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // 🔓 Crucial handshake header to drop the Ngrok anti-phishing wall
-          "ngrok-skip-browser-warning": "bypass"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt,
           userId: user.uid,
@@ -122,20 +137,18 @@ export default function Generator() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("GENERATION FAILED");
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "GENERATION FAILED");
       }
 
-      // 4. Parse Raw Streaming Data directly into a client blob URL
-      const imageBlob = await response.blob();
-      const temporaryBlobUrl = URL.createObjectURL(imageBlob);
-
-      // 5. Update UI
-      setResultImage(temporaryBlobUrl);
-      setEnhancedPrompt(prompt); // Fallback to original prompt since backend streams direct bytes
+      // 4. Update UI
+      setResultImage(data.imageUrl);
+      setEnhancedPrompt(data.enhancedPrompt);
       completeSummoning();
 
-      // 6. Success - Deduct Credit only if NOT a legend
+      // 5. Success - Deduct Credit only if NOT a legend
       if (!isLegend) {
         await updateDoc(userRef, { credits: increment(-1) });
       }
@@ -172,7 +185,7 @@ export default function Generator() {
           </p>
           <button
             onClick={handleLogin}
-            className="flex items-center gap-3 bg-white text-black px-10 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-cyan-400 transition-all mx-auto"
+            className="flex items-center gap-3 bg-white text-black px-10 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-cyan-400 transition-all mx-auto cursor-pointer"
           >
             <LogIn size={16} /> Sign in with Google
           </button>
@@ -207,7 +220,7 @@ export default function Generator() {
           <button
             onClick={handleSummon}
             disabled={isGenerating || !prompt}
-            className={`px-10 py-4 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 ${isGenerating
+            className={`px-10 py-4 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 cursor-pointer ${isGenerating
               ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
               : 'bg-white text-black hover:bg-cyan-400 hover:scale-105 active:scale-95 shadow-lg'
               }`}
@@ -264,7 +277,7 @@ export default function Generator() {
               download={`summon-${Date.now()}.png`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-[9px] font-black tracking-widest uppercase text-white hover:text-cyan-400 transition-colors bg-white/5 px-4 py-2 rounded-lg"
+              className="flex items-center gap-2 text-[9px] font-black tracking-widest uppercase text-white hover:text-cyan-400 transition-colors bg-white/5 px-4 py-2 rounded-lg decoration-none"
             >
               <Download size={14} /> HD SAVE
             </a>

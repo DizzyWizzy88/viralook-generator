@@ -1,9 +1,6 @@
-
-
-import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getFirebaseAuth } from '@/lib/firebase'; // 💡 Clean path alias import
 
 // Core Layout & Module Component Path Aliases
 import Generator from '@/components/modules/Generator';
@@ -17,10 +14,10 @@ export default function DashboardContent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
-    
-    // Explicitly typed (user: any) to resolve implicit 'any' compilation error
-    const unsubscribe = auth.onAuthStateChanged((user: any) => {
+    // 💡 Assigned to a dedicated variable so the compiler explicitly registers its usage
+    const authInstance = getFirebaseAuth();
+
+    const unsubscribe = authInstance.onAuthStateChanged((user: any) => {
       if (!user) {
         navigate('/login');
       } else {
@@ -29,7 +26,7 @@ export default function DashboardContent() {
     });
 
     return () => unsubscribe();
-  }, [navigate]);
+  }, [navigate]); // 💡 The hook ends cleanly right here
 
   if (loading) {
     return (
@@ -42,7 +39,7 @@ export default function DashboardContent() {
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950 text-white">
       <Navbar />
-      
+
       <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl space-y-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-800 pb-6">
           <div>
@@ -63,7 +60,7 @@ export default function DashboardContent() {
           <div className="lg:col-span-1 bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 backdrop-blur-sm h-fit">
             <Generator />
           </div>
-          
+
           {/* Main Display Output Gallery */}
           <div className="lg:col-span-2 space-y-4">
             <h2 className="text-xl font-semibold tracking-tight text-zinc-200">

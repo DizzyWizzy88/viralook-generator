@@ -30,11 +30,7 @@ export default function LoginContent() {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/dashboard");
     } catch (err: any) {
-      // 💡 Added debugging logs to print the real Firebase rejection message to the inspect console
       console.error("🔥 LOGIN FAILED:", err);
-      console.error("Code:", err.code);
-      console.error("Message:", err.message);
-      
       setError("Invalid email or password.");
     } finally {
       setLoading(false);
@@ -44,8 +40,6 @@ export default function LoginContent() {
   const handleGoogleLogin = async () => {
     const auth = getFirebaseAuth();
     const db = getFirebaseDb();
-
-    console.log("RUNTIME FIREBASE OPTIONS:", auth.app.options);
 
     const provider = new GoogleAuthProvider();
     setError("");
@@ -60,16 +54,15 @@ export default function LoginContent() {
       if (!userSnap.exists()) {
         await setDoc(userRef, {
           email: user.email,
-          credits: 2,
+          // 💡 Dropped initial new-user payload from 2 to 1 credit!
+          credits: 1, 
           createdAt: serverTimestamp(),
           isUnlimited: false
         });
       }
       navigate("/dashboard");
     } catch (err: any) {
-      // 💡 Added debugging logs here as well to capture popup/network errors
       console.error("🔥 GOOGLE AUTH FAILED:", err);
-      
       setError("Google sign-in failed.");
     }
   };
@@ -80,7 +73,7 @@ export default function LoginContent() {
 
         {/* BRAND LOGO HEADER */}
         <div className="text-center flex flex-col items-center">
-          <Link to="/" className="transition-opacity hover:opacity-90 block mb-2">
+          <Link to="/" className="transition-opacity hover:opacity-90 block mb-2 evaluation-no-underline">
             <div className="w-48 max-w-[200px] aspect-square flex items-center justify-center overflow-hidden">
               <img
                 src="/Viralook.png"
@@ -122,7 +115,7 @@ export default function LoginContent() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-black font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-200 transition-all"
+            className="w-full bg-white text-black font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-200 transition-all cursor-pointer"
           >
             {loading ? "AUTHENTICATING..." : "LOGIN"}
           </button>
@@ -134,10 +127,10 @@ export default function LoginContent() {
           <div className="relative flex justify-center text-[8px] font-black uppercase"><span className="bg-black px-2 text-zinc-600 tracking-[0.3em]">OR</span></div>
         </div>
 
-        {/* GOOGLE AUTHENTICATION LINK WITH EXPANDED GAP SPACING */}
+        {/* GOOGLE AUTHENTICATION LINK */}
         <button 
           onClick={handleGoogleLogin}
-          className="w-full bg-zinc-900 border border-white/5 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-800 transition-all flex items-center justify-center gap-4 group"
+          className="w-full bg-zinc-900 border border-white/5 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-800 transition-all flex items-center justify-center gap-4 group cursor-pointer"
         >
           <img 
             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
@@ -148,9 +141,9 @@ export default function LoginContent() {
           <span>Continue with Google</span>
         </button>
 
-        {/* BACKWARD REGISTRATION ROUTING */}
+        {/* BACKWARD REGISTRATION ROUTING - REMOVED UNDERLINE */}
         <p className="text-center text-[10px] text-zinc-500 uppercase tracking-widest">
-          New here? <Link to="/signup" className="text-white underline">Create Account</Link>
+          New here? <Link to="/signup" className="text-white font-bold hover:text-zinc-200 transition-colors ml-1">Create Account</Link>
         </p>
       </div>
     </div>
