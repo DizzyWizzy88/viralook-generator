@@ -1,79 +1,70 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getFirebaseAuth } from '@/lib/firebase'; // 💡 Clean path alias import
 
-// Core Layout & Module Component Path Aliases
-import Generator from '@/components/modules/Generator';
-import ImageGallery from '@/components/modules/ImageGallery';
-import Navbar from '@/components/layouts/Navbar';
-import Footer from '@/components/layouts/Footer';
-import CreditBadge from '@/components/CreditBadge';
+// 1. Vite/React replacements for Next.js modules
+// Replace `next/navigation` searchParams with standard URLSearchParams in Vite
+// Replace `next/image` with standard <img> tags or standard UI components
 
-export default function DashboardContent() {
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+// 2. Local module imports (Adjust relative paths if these components are located in src/components/ instead)
+import Generator from './Generator';
+import CreditBadge from './CreditBadge';
+import PricingTable from './PricingTable';
+import ImageGallery from './ImageGallery';
+import LoadingBar from './LoadingBar';
 
+interface UserData {
+  id?: string;
+  email?: string;
+  name?: string;
+  [key: string]: unknown; // Replaced 'any' with 'unknown' for TypeScript safety
+}
+
+interface DashboardContentProps {
+  userData?: UserData;
+}
+
+export default function DashboardContent({ userData }: DashboardContentProps) {
+  const [loginMessage, setLoginMessage] = useState<string | null>(null);
+
+  // Read URL search parameters natively in Vite
   useEffect(() => {
-    // 💡 Assigned to a dedicated variable so the compiler explicitly registers its usage
-    const authInstance = getFirebaseAuth();
+    const searchParams = new URLSearchParams(window.location.search);
+    const loginParam = searchParams.get('login');
 
-    const unsubscribe = authInstance.onAuthStateChanged((user: any) => {
-      if (!user) {
-        navigate('/login');
-      } else {
-        setLoading(false);
-      }
-    });
+    if (loginParam === 'success') {
+      // Async state update prevents cascading re-render warnings in React effects
+      const timer = setTimeout(() => {
+        setLoginMessage('Welcome back! You have successfully logged in.');
+      }, 0);
 
-    return () => unsubscribe();
-  }, [navigate]); // 💡 The hook ends cleanly right here
+      // Clean up the URL parameter without triggering a page refresh
+      const url = new URL(window.location.href);
+      url.searchParams.delete('login');
+      window.history.replaceState({}, '', url.toString());
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-white">
-      <Navbar />
-
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-800 pb-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-              AI Studio Dashboard
-            </h1>
-            <p className="text-sm text-zinc-400 mt-1">
-              Generate, iterate, and review your viral image assets.
-            </p>
-          </div>
-          <div className="flex items-center">
-            <CreditBadge />
-          </div>
+    <div className="dashboard-content p-6 space-y-6">
+      {loginMessage && (
+        <div className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50">
+          {loginMessage}
         </div>
+      )}
 
-        {/* Core Generator Control Module */}
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
-          <div className="lg:col-span-1 bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 backdrop-blur-sm h-fit">
-            <Generator />
-          </div>
+      {/* Render Header & User Badges */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        {userData?.email && <p className="text-sm text-gray-500">Logged in as {userData.email}</p>}
+        <CreditBadge />
+      </div>
 
-          {/* Main Display Output Gallery */}
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-200">
-              Generation History
-            </h2>
-            <div className="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-4">
-              <ImageGallery />
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <Footer />
+      {/* Main Feature Modules */}
+      <LoadingBar />
+      <Generator />
+      <ImageGallery />
+      <PricingTable />
     </div>
   );
 }

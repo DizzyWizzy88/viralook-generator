@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
 import { db, getFirebaseAuth } from "@/lib/firebase";
 
@@ -31,7 +31,7 @@ const plans = [
 ];
 
 export default function PricingTable() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleCheckout = async (priceId: string | null, planId: string) => {
@@ -57,12 +57,12 @@ export default function PricingTable() {
         }, { merge: true });
 
         alert("Starter plan activated! 2 credits added.");
-        router.push('/dashboard');
+        navigate('/dashboard');
       } else {
         const response = await fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId, userId: user.uid, userEmail: user.email, planId: planId }),
+          body: JSON.stringify({ priceId, userId: user.uid, userEmail: user.email, planId }),
         });
 
         const session = await response.json();

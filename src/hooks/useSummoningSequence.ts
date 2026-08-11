@@ -3,7 +3,7 @@ import { useState, useCallback, useRef } from 'react';
 export const useSummoningSequence = () => {
   const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState("READY TO SUMMON");
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startSummoning = useCallback(() => {
     // Clear any existing intervals
