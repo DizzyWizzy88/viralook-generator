@@ -1,120 +1,119 @@
-import React, { useState } from 'react';
-import { useNavigate } from "react-router-dom";
-import { doc, setDoc } from "firebase/firestore";
-import { db, getFirebaseAuth } from "@/lib/firebase";
+// File: src/components/modules/PricingTable.tsx
 
-const plans = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: '$0',
-    description: 'Perfect for trying us out',
-    features: ["2 One-time Credits", "Llama Basic Expansion", "Public Feed Only"],
-    priceId: null,
-  },
-  {
-    id: 'pro',
-    name: 'Pro Monthly',
-    price: '$19.99',
-    description: 'For power users',
-    features: ["500 Credits/mo", "Llama Expert Prompts", "Public Feed"],
-    priceId: 'price_1SlG310ZcMLctEm4DPIgTkyR', // Replace with your actual Stripe ID
-  },
-  {
-    id: 'legend',
-    name: 'Viral Legend',
-    price: '$39.99',
-    description: 'Unlimited creative power',
-    features: ["Unlimited Credits", "Llama Creative Director", "Private Mode (Hidden)"],
-    priceId: 'price_1SlG4r0ZcMLctEm4Nyh0rswZ', // Replace with your actual Stripe ID
-  }
-];
+const PLAN_PRICE_IDS = {
+  pro: 'price_1U3P4e0ZcMLctEm4hwPWTDWM',
+  viral_legend: 'price_1U3P3q0ZcMLctEm4I4M7XWeB',
+} as const;
 
-export default function PricingTable() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState<string | null>(null);
+export type PlanKey = keyof typeof PLAN_PRICE_IDS;
 
-  const handleCheckout = async (priceId: string | null, planId: string) => {
-    const auth = getFirebaseAuth();
-    const user = auth.currentUser;
+interface PricingTableProps {
+  onSelectPlan?: (planKey: PlanKey, priceId: string) => void;
+  loadingPlan?: string | null;
+}
 
-    if (!user) {
-      alert("Please sign in first!");
-      return;
-    }
-
-    setLoading(planId);
-
-    try {
-      if (!priceId || planId === 'starter') {
-        const userRef = doc(db, "users", user.uid);
-        await setDoc(userRef, {
-          uid: user.uid,
-          email: user.email,
-          credits: 2,
-          tier: 'starter',
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-
-        alert("Starter plan activated! 2 credits added.");
-        navigate('/dashboard');
-      } else {
-        const response = await fetch('/api/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId, userId: user.uid, userEmail: user.email, planId }),
-        });
-
-        const session = await response.json();
-
-        if (session.url) {
-          window.location.href = session.url;
-        } else {
-          alert("Could not create Stripe session.");
-        }
-      } 
-    } catch (error) {
-      console.error("Checkout error:", error);
-      alert("Something went wrong with the checkout process.");
-    } finally {
-      setLoading(null);
-    }
-  }; // This closes the function correctly
-
+export default function PricingTable({ onSelectPlan, loadingPlan }: PricingTableProps) {
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {plans.map((plan) => (
-          <div key={plan.id} className="border border-zinc-800 bg-zinc-900/50 p-8 rounded-2xl flex flex-col">
-            <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
-            <div className="mt-4 flex items-baseline text-white">
-              <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
-            </div>
-            <p className="mt-2 text-zinc-400">{plan.description}</p>
-            
-            <ul className="mt-6 space-y-4 flex-1">
-              {plan.features.map((feature) => (
-                <li key={feature} className="flex text-zinc-300 text-sm">
-                  <span className="text-green-500 mr-2">✓</span> {feature}
-                </li>
-              ))}
-            </ul>
+    <div className="w-full max-w-5xl mx-auto py-12 px-4">
+      <div className="text-center mb-12">
+        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-widest text-white">
+          Choose Your Plan
+        </h2>
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider mt-2">
+          Unlock more generation credits and features
+        </p>
+      </div>
 
-            <button
-              onClick={() => handleCheckout(plan.priceId, plan.id)}
-              disabled={loading !== null}
-              className={`mt-8 w-full py-3 px-4 rounded-xl font-semibold transition-all ${
-                plan.id === 'pro' 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-zinc-100 hover:bg-zinc-200 text-black'
-              }`}
-            >
-              {loading === plan.id ? "Processing..." : `Choose ${plan.name}`}
-            </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* PRO PLAN */}
+        <div className="bg-zinc-950 border border-zinc-800/80 rounded-2xl p-8 flex flex-col justify-between hover:border-zinc-700 transition-all">
+          <div>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-black uppercase tracking-wider text-white">Pro</h3>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+                  For active creators
+                </p>
+              </div>
+            </div>
+
+            <div className="my-6">
+              <span className="text-4xl font-black text-white">$4.99</span>
+              <span className="text-zinc-500 text-xs uppercase tracking-wider ml-2">/ month</span>
+            </div>
+
+            <ul className="space-y-3 mb-8 text-xs text-zinc-300 font-medium">
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> 50 Credits per month
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Fast generation processing
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Standard export resolution
+              </li>
+            </ul>
           </div>
-        ))}
+
+          <button
+            type="button"
+            onClick={() => onSelectPlan && onSelectPlan('pro', PLAN_PRICE_IDS.pro)}
+            disabled={loadingPlan === 'pro'}
+            className="w-full bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[11px] transition-all cursor-pointer disabled:opacity-50"
+          >
+            {loadingPlan === 'pro' ? 'PROCESSING...' : 'GET PRO'}
+          </button>
+        </div>
+
+        {/* VIRAL LEGEND PLAN */}
+        <div className="bg-zinc-950 border-2 border-white/20 rounded-2xl p-8 flex flex-col justify-between relative overflow-hidden shadow-2xl shadow-white/5">
+          <div className="absolute top-4 right-4 bg-white text-black font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-full">
+            Most Popular
+          </div>
+
+          <div>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-black uppercase tracking-wider text-white">
+                  Viral Legend
+                </h3>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+                  Unlimited access
+                </p>
+              </div>
+            </div>
+
+            <div className="my-6">
+              <span className="text-4xl font-black text-white">$12.99</span>
+              <span className="text-zinc-500 text-xs uppercase tracking-wider ml-2">/ month</span>
+            </div>
+
+            <ul className="space-y-3 mb-8 text-xs text-zinc-300 font-medium">
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Unlimited Generations
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Priority processing speed
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Full HD high-res exports
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-500 font-bold">✓</span> Early access to new features
+              </li>
+            </ul>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onSelectPlan && onSelectPlan('viral_legend', PLAN_PRICE_IDS.viral_legend)}
+            disabled={loadingPlan === 'viral_legend'}
+            className="w-full bg-white text-black hover:bg-zinc-200 font-black py-4 rounded-xl uppercase tracking-widest text-[11px] transition-all cursor-pointer disabled:opacity-50"
+          >
+            {loadingPlan === 'viral_legend' ? 'PROCESSING...' : 'GO LEGEND'}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
