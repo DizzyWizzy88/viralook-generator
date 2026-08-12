@@ -1,33 +1,32 @@
+import React from 'react';
 
-interface CreditBadgeProps {
+export interface CreditBadgeProps {
   credits: number;
   isUnlimited?: boolean;
   onUpgradeClick?: () => void;
 }
 
-export default function CreditBadge({
+export const CreditBadge: React.FC<CreditBadgeProps> = ({
   credits,
   isUnlimited = false,
-  onUpgradeClick
-}: CreditBadgeProps) {
-  // Hide the badge completely for Viral Legend / Unlimited subscribers
-  if (isUnlimited) {
-    return null;
-  }
-
+  onUpgradeClick,
+}) => {
   return (
-    <button
-      type="button"
-      onClick={onUpgradeClick}
-      className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-3 py-1.5 rounded-full transition-all cursor-pointer group"
-    >
-      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-      <span className="text-[11px] font-bold text-zinc-300 group-hover:text-white tracking-wider uppercase">
-        {credits} {credits === 1 ? 'Credit' : 'Credits'}
+    <div className="flex items-center gap-2 rounded-full bg-slate-800/80 px-3 py-1 text-sm text-slate-200 border border-slate-700">
+      <span className="font-medium">
+        {isUnlimited ? '∞ Unlimited Credits' : `${credits} Credits`}
       </span>
-      <span className="text-[9px] font-black bg-white/10 group-hover:bg-white group-hover:text-black px-1.5 py-0.5 rounded transition-all text-zinc-400">
-        +
-      </span>
-    </button>
+      {onUpgradeClick && (
+        <button
+          onClick={onUpgradeClick}
+          type="button"
+          className="ml-1 rounded-full bg-indigo-600 px-2.5 py-0.5 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+        >
+          Upgrade
+        </button>
+      )}
+    </div>
   );
-}
+};
+
+export default CreditBadge;
