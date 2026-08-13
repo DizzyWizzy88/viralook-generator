@@ -8,11 +8,11 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-// @ts-ignore
+
 import { doc, updateDoc, increment, getDoc, setDoc } from 'firebase/firestore';
 import { db, getFirebaseAuth } from '@/lib/firebase';
 import { useSummoningSequence } from '@/hooks/useSummoningSequence';
-// @ts-ignore
+
 import {
   Sparkles,
   Zap,
@@ -50,7 +50,7 @@ export default function Generator(): React.JSX.Element {
   // Listen for Auth changes and pre-fetch Legend status
   useEffect(() => {
     const auth = getFirebaseAuth();
-    return onAuthStateChanged(auth, async (currentUser: any) => {
+    return onAuthStateChanged(auth, async (currentUser: User | null) => {
       setUser(currentUser);
       if (currentUser) {
         const snap = await getDoc(doc(db, "users", currentUser.uid));
@@ -152,9 +152,10 @@ export default function Generator(): React.JSX.Element {
       if (!isLegend) {
         await updateDoc(userRef, { credits: increment(-1) });
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Summoning error:", err);
-      const msg = err.message || "THE SPIRITS ARE SILENT...";
+      const errorObject = err as Error;
+      const msg = errorObject.message || "THE SPIRITS ARE SILENT...";
       setError(msg);
       failSummoning(msg);
     } finally {
@@ -221,8 +222,8 @@ export default function Generator(): React.JSX.Element {
             onClick={handleSummon}
             disabled={isGenerating || !prompt}
             className={`px-10 py-4 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 cursor-pointer ${isGenerating
-              ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-              : 'bg-white text-black hover:bg-cyan-400 hover:scale-105 active:scale-95 shadow-lg'
+                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                : 'bg-white text-black hover:bg-cyan-400 hover:scale-105 active:scale-95 shadow-lg'
               }`}
           >
             {isGenerating ? <RefreshCw className="animate-spin" size={16} /> : <Sparkles size={16} />}
@@ -274,7 +275,7 @@ export default function Generator(): React.JSX.Element {
             </div>
             <a
               href={resultImage}
-              download={`summon-${Date.now()}.png`}
+              download="summon-generation.png"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-[9px] font-black tracking-widest uppercase text-white hover:text-cyan-400 transition-colors bg-white/5 px-4 py-2 rounded-lg decoration-none"
