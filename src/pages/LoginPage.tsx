@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { FirebaseError } from 'firebase/app';
+import { auth, syncUserData } from '../lib/firebase';
 import {
     signInWithEmailAndPassword,
     GoogleAuthProvider,
@@ -71,20 +72,20 @@ export default function LoginPage() {
         }
     };
 
-    const handleGoogleLogin = async () => {
-        const auth = getFirebaseAuth();
+   const handleGoogleLogin = async () => {
+    try {
         const provider = new GoogleAuthProvider();
-        setError("");
+        const result = await signInWithPopup(auth, provider);
 
-        try {
-            const result = await signInWithPopup(auth, provider);
-            await handleOAuthSuccess(result.user);
-        } catch (err) {
-            console.error("🔥 GOOGLE AUTH FAILED:", err);
-            setError("Google sign-in failed.");
+        if (result.user) {
+            await syncUserData(result.user);
+            navigate('/dashboard');
+        }
+    }  catch (error) {
+        console.error('Google Sign-In Error:', error);
         }
     };
-
+        
     return (
         <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
             <div className="w-full max-w-md space-y-8">

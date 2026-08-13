@@ -1,4 +1,4 @@
-// File: src/components/modules/PricingTable.tsx
+
 
 const PLAN_PRICE_IDS = {
   pro: 'price_1U3P4e0ZcMLctEm4hwPWTDWM',

@@ -1,68 +1,96 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import CreditBadge from './CreditBadge';
+import React, { useState, useEffect } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { auth, db } from '../../lib/firebase';
+import GlobalFeed from './GlobalFeed';
 import PricingTable, { PlanKey } from './PricingTable';
 
-interface UserProfile {
-  credits?: number;
-  isUnlimited?: boolean;
-  email?: string;
-}
+// Local UI sub-components
+const CreditBadge = ({ credits, isUnlimited, onUpgradeClick }: { credits: number; isUnlimited: boolean; onUpgradeClick: () => void }) => (
+  <div onClick={onUpgradeClick} className="cursor-pointer px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+    <span className="text-zinc-400">Credits:</span>
+    <span className="text-white">{isUnlimited ? '∞ Unlimited' : credits}</span>
+  </div>
+);
 
-interface FeedItem {
-  id: string;
-  imageUrl: string;
-  prompt: string;
-  author?: string;
-  likes?: number;
-}
+export const DashboardContent = () => {
+  // 1. User & Subscription States
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('Free');
+  const [isUnlimited, setIsUnlimited] = useState<boolean>(false);
+  const [credits, setCredits] = useState<number>(0);
+  const [loginMessage, setLoginMessage] = useState<string>('');
 
-interface DashboardContentProps {
-  userProfile?: UserProfile | null;
-  onGenerate?: (prompt: string, style?: string) => Promise<void>;
-  onSelectPlan?: (planKey: PlanKey, priceId: string) => void;
-  feedItems?: FeedItem[];
-  isSummoning?: boolean;
-  summoningStep?: string;
-  loginMessage?: string | null;
-}
-
-export default function DashboardContent({
-  userProfile,
-  onGenerate,
-  onSelectPlan,
-  feedItems = [],
-  isSummoning = false,
-  summoningStep = 'INITIALIZING ARCHITECTURAL GRID...',
-  loginMessage
-}: DashboardContentProps) {
-  const [prompt, setPrompt] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState('Cyberpunk');
-  const [activeTab, setActiveTab] = useState<'create' | 'feed' | 'pricing'>('create');
+  // 2. UI & Generator States
+  const [activeTab, setActiveTab] = useState<string>('create');
+  const [selectedStyle, setSelectedStyle] = useState<string>('Cyberpunk');
+  const [prompt, setPrompt] = useState<string>('');
+  const [isSummoning, setIsSummoning] = useState<boolean>(false);
+  const [summoningStep, setSummoningStep] = useState<string>('Initializing core models...');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const navigate = useNavigate();
 
+  // 3. Logout Handler
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // 4. Real-time Firestore Listener
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userRef = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setSubscriptionTier(data.subscriptionTier || 'Free');
+        setIsUnlimited(Boolean(data.isUnlimited));
+        setCredits(data.credits ?? 0);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 5. Form Submit Handler
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim() || isSummoning) return;
+    if (!prompt.trim()) return;
 
-    if (onGenerate) {
-      await onGenerate(prompt, selectedStyle);
+    setIsSummoning(true);
+    setSummoningStep('Synthesizing prompt geometry...');
+
+    try {
+      await new Promise((res) => setTimeout(res, 2000));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSummoning(false);
     }
   };
 
   const handlePlanSelection = async (planKey: PlanKey, priceId: string) => {
-    setLoadingPlan(String(planKey));
+  setLoadingPlan(planKey);
     try {
-      if (onSelectPlan) {
-        await onSelectPlan(planKey, priceId);
-      } else {
-        navigate('/pricing');
-      }
+      // Stripe checkout redirect logic using priceId
+      console.log('Selected plan:', planKey, 'Price ID:', priceId);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoadingPlan(null);
     }
   };
+
+  // 2. Render the imported component under activeTab === 'pricing':
+  {activeTab === 'pricing' && (
+    <PricingTable
+      onSelectPlan={handlePlanSelection}
+      loadingPlan={loadingPlan}
+      />
+  )};
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between">
@@ -71,11 +99,7 @@ export default function DashboardContent({
         {/* BRAND LOGO + TEXT HEADER */}
         <div className="flex items-center gap-3">
           <div className="h-10 w-auto flex items-center justify-start overflow-hidden">
-            <img
-              src="/Viralook.png"
-              alt="Viralook Logo"
-              className="h-full w-auto object-contain"
-            />
+            <img src="/Viralook.png" alt="Viralook Logo" className="h-full w-auto object-contain" />
           </div>
           <span className="text-white text-lg font-black uppercase tracking-widest border-l border-zinc-800 pl-3">
             Viralook AI Studio
@@ -84,11 +108,36 @@ export default function DashboardContent({
 
         {/* RIGHT SIDE BADGES / NAV */}
         <div className="flex items-center gap-4">
+          {/* User Tier Badge */}
+          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            {subscriptionTier}
+          </span>
+
+          {/* Upgrade Button */}
+          {subscriptionTier !== 'Viral Legend' && !isUnlimited && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('pricing')}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              Upgrade
+            </button>
+          )}
+
           <CreditBadge
-            credits={userProfile?.credits ?? 0}
-            isUnlimited={userProfile?.isUnlimited ?? false}
+            credits={credits}
+            isUnlimited={isUnlimited}
             onUpgradeClick={() => setActiveTab('pricing')}
           />
+          
+          {/* LOGOUT BUTTON */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 font-bold py-2 px-3 rounded-lg text-xs uppercase tracking-wider transition-all cursor-pointer"
+          >
+            Logout
+          </button>
         </div>
       </header>
 
@@ -105,30 +154,27 @@ export default function DashboardContent({
           <button
             type="button"
             onClick={() => setActiveTab('create')}
-            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${activeTab === 'create'
-                ? 'border-white text-white'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
+            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${
+              activeTab === 'create' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            }`}
           >
             Studio Generator
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('feed')}
-            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${activeTab === 'feed'
-                ? 'border-white text-white'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
+            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${
+              activeTab === 'feed' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            }`}
           >
-            Community Feed
+            Global Feed
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('pricing')}
-            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${activeTab === 'pricing'
-                ? 'border-white text-white'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
+            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${
+              activeTab === 'pricing' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            }`}
           >
             Plans & Billing
           </button>
@@ -140,9 +186,7 @@ export default function DashboardContent({
         {activeTab === 'create' && (
           <div className="max-w-3xl mx-auto space-y-8 py-6">
             <div className="text-center space-y-2">
-              <h1 className="text-3xl font-black uppercase tracking-widest">
-                Summon High-Impact Assets
-              </h1>
+              <h1 className="text-3xl font-black uppercase tracking-widest"> Summon High-Impact Assets </h1>
               <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
                 Select your aesthetic preset and enter your core creative vision
               </p>
@@ -163,19 +207,18 @@ export default function DashboardContent({
               <form onSubmit={handleFormSubmit} className="space-y-6">
                 {/* STYLE PRESETS */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                    Aesthetic Style
-                  </label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400"> Aesthetic Style </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {['Cyberpunk', 'Minimalist', 'Hyper-Real', 'Dark Studio'].map((style) => (
                       <button
                         key={style}
                         type="button"
                         onClick={() => setSelectedStyle(style)}
-                        className={`p-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${selectedStyle === style
+                        className={`p-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                          selectedStyle === style
                             ? 'bg-white text-black border-white'
                             : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                          }`}
+                        }`}
                       >
                         {style}
                       </button>
@@ -185,9 +228,7 @@ export default function DashboardContent({
 
                 {/* PROMPT TEXTAREA */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                    Prompt Concept
-                  </label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400"> Prompt Concept </label>
                   <textarea
                     rows={4}
                     value={prompt}
@@ -212,53 +253,16 @@ export default function DashboardContent({
         {activeTab === 'feed' && (
           <div className="space-y-6 py-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-black uppercase tracking-widest">
-                Community Creations
-              </h2>
-              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-                Real-time output stream
-              </span>
+              <h2 className="text-xl font-black uppercase tracking-widest"> Community Creations </h2>
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest"> Real-time output stream </span>
             </div>
 
-            {feedItems.length === 0 ? (
-              <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-12 text-center text-zinc-600 text-xs font-bold uppercase tracking-widest">
-                No public assets generated yet. Be the first!
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {feedItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden group hover:border-zinc-700 transition-all"
-                  >
-                    <div className="aspect-square overflow-hidden bg-zinc-900 relative">
-                      <img
-                        src={item.imageUrl}
-                        alt={item.prompt}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="p-4 space-y-2">
-                      <p className="text-xs text-zinc-300 font-medium line-clamp-2">
-                        {item.prompt}
-                      </p>
-                      <div className="flex justify-between items-center text-[10px] text-zinc-500 font-bold uppercase tracking-wider pt-2 border-t border-zinc-900">
-                        <span>{item.author || 'Anonymous'}</span>
-                        {item.likes !== undefined && <span>❤️ {item.likes}</span>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <GlobalFeed />
           </div>
         )}
 
         {activeTab === 'pricing' && (
-          <PricingTable
-            onSelectPlan={handlePlanSelection}
-            loadingPlan={loadingPlan}
-          />
+          <PricingTable onSelectPlan={handlePlanSelection} loadingPlan={loadingPlan} />
         )}
       </main>
 
@@ -268,4 +272,6 @@ export default function DashboardContent({
       </footer>
     </div>
   );
-}
+};
+
+export default DashboardContent;
