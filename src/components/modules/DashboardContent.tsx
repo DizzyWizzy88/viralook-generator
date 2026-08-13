@@ -18,15 +18,15 @@ export const DashboardContent = () => {
   const [subscriptionTier, setSubscriptionTier] = useState<string>('Free');
   const [isUnlimited, setIsUnlimited] = useState<boolean>(false);
   const [credits, setCredits] = useState<number>(0);
-  const [loginMessage, setLoginMessage] = useState<string>('');
+  const [loginMessage] = useState<string | null>(null); // Fixed syntax error
 
   // 2. UI & Generator States
   const [activeTab, setActiveTab] = useState<string>('create');
   const [selectedStyle, setSelectedStyle] = useState<string>('Cyberpunk');
   const [prompt, setPrompt] = useState<string>('');
   const [isSummoning, setIsSummoning] = useState<boolean>(false);
-  const [summoningStep, setSummoningStep] = useState<string>('Initializing core models...');
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [summoningStep] = useState<string>('Initializing core models...');
+  const [loadingPlan, setLoadingPlan] = useState<PlanKey | null>(null);
 
   // 3. Logout Handler
   const handleLogout = async () => {
@@ -61,7 +61,6 @@ export const DashboardContent = () => {
     if (!prompt.trim()) return;
 
     setIsSummoning(true);
-    setSummoningStep('Synthesizing prompt geometry...');
 
     try {
       await new Promise((res) => setTimeout(res, 2000));
@@ -73,7 +72,7 @@ export const DashboardContent = () => {
   };
 
   const handlePlanSelection = async (planKey: PlanKey, priceId: string) => {
-  setLoadingPlan(planKey);
+    setLoadingPlan(planKey);
     try {
       // Stripe checkout redirect logic using priceId
       console.log('Selected plan:', planKey, 'Price ID:', priceId);
@@ -83,14 +82,6 @@ export const DashboardContent = () => {
       setLoadingPlan(null);
     }
   };
-
-  // 2. Render the imported component under activeTab === 'pricing':
-  {activeTab === 'pricing' && (
-    <PricingTable
-      onSelectPlan={handlePlanSelection}
-      loadingPlan={loadingPlan}
-      />
-  )};
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between">
@@ -129,7 +120,7 @@ export const DashboardContent = () => {
             isUnlimited={isUnlimited}
             onUpgradeClick={() => setActiveTab('pricing')}
           />
-          
+
           {/* LOGOUT BUTTON */}
           <button
             type="button"
@@ -154,27 +145,24 @@ export const DashboardContent = () => {
           <button
             type="button"
             onClick={() => setActiveTab('create')}
-            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${
-              activeTab === 'create' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
-            }`}
+            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${activeTab === 'create' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
           >
             Studio Generator
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('feed')}
-            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${
-              activeTab === 'feed' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
-            }`}
+            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${activeTab === 'feed' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
           >
             Global Feed
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('pricing')}
-            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${
-              activeTab === 'pricing' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
-            }`}
+            className={`py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer ${activeTab === 'pricing' ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
           >
             Plans & Billing
           </button>
@@ -214,11 +202,10 @@ export const DashboardContent = () => {
                         key={style}
                         type="button"
                         onClick={() => setSelectedStyle(style)}
-                        className={`p-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                          selectedStyle === style
+                        className={`p-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${selectedStyle === style
                             ? 'bg-white text-black border-white'
                             : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                        }`}
+                          }`}
                       >
                         {style}
                       </button>
