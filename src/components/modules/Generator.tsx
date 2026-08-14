@@ -29,7 +29,7 @@ import {
   Download
 } from 'lucide-react';
 
-const VERCEL_API_URL = "/api/generate";
+const VITE_API_URL = import.meta.env.VITE_API_URL || "https://viralook-generator-1.onrender.com/api/generate";
 
 export default function Generator() {
   const [user, setUser] = useState<User | null>(null);
@@ -114,7 +114,7 @@ export default function Generator() {
         console.log("🔍 1. MOCK DATA GENERATED:", { finalImageUrl, finalEnhancedPrompt });
       } else {
         // Production API Call
-        const response = await fetch(VERCEL_API_URL, {
+        const response = await fetch(VITE_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
