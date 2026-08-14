@@ -29,7 +29,13 @@ import {
   Download
 } from 'lucide-react';
 
-const VITE_API_URL = import.meta.env.VITE_API_URL || "https://viralook-generator-1.onrender.com/api/generate";
+// Import fal.ai client
+import { fal } from "@fal-ai/client";
+
+// Configure FAL credentials directly from Vite environment variables
+fal.config({
+  credentials: import.meta.env.VITE_FAL_KEY,
+});
 
 export default function Generator() {
   const [user, setUser] = useState<User | null>(null);
@@ -113,26 +119,23 @@ export default function Generator() {
 
         console.log("🔍 1. MOCK DATA GENERATED:", { finalImageUrl, finalEnhancedPrompt });
       } else {
-        // Production API Call
-        const response = await fetch(VITE_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt,
-            userId: user.uid,
-            userName: user.displayName || "Anonymous Creator"
-          }),
+        // Direct fal.ai generation via subscribe (Bypasses external Express backend & CORS)
+        finalEnhancedPrompt = `${prompt}, hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
+
+        const falResult: any = await fal.subscribe("fal-ai/flux/schnell", {
+          input: {
+            prompt: finalEnhancedPrompt,
+            image_size: "square_hd",
+          },
         });
 
-        const data = await response.json();
-        console.log("🔍 1. RAW API RESPONSE DATA:", data);
+        console.log("🔍 1. RAW FAL RESPONSE DATA:", falResult);
 
-        if (!response.ok || data.error) {
-          throw new Error(data.error || "GENERATION FAILED");
+        if (!falResult || !falResult.data?.images?.[0]?.url) {
+          throw new Error("GENERATION FAILED - NO IMAGE RETURNED");
         }
 
-        finalImageUrl = data.imageUrl;
-        finalEnhancedPrompt = data.enhancedPrompt;
+        finalImageUrl = falResult.data.images[0].url;
       }
 
       console.log("🔍 2. FINAL URL SET IN STATE:", finalImageUrl);
