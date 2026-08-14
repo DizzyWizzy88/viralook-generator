@@ -29,14 +29,6 @@ import {
   Download
 } from 'lucide-react';
 
-// Import fal.ai client
-import { fal } from "@fal-ai/client";
-
-// Configure FAL credentials directly from Vite environment variables
-fal.config({
-  credentials: import.meta.env.VITE_FAL_KEY,
-});
-
 export default function Generator() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
@@ -81,7 +73,13 @@ export default function Generator() {
     setIsGenerating(true);
 
     try {
-      // 1. Server-Side Sync & Credit Validation
+      // 1. Validate environment variable
+      const falKey = import.meta.env.VITE_FAL_KEY;
+      if (!falKey) {
+        throw new Error("VITE_FAL_KEY IS MISSING FROM ENVIRONMENT VARIABLES.");
+      }
+
+      // 2. User Credit Validation
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -104,47 +102,35 @@ export default function Generator() {
 
       startSummoning();
 
-      let finalImageUrl = "";
-      let finalEnhancedPrompt = "";
+      const finalEnhancedPrompt = `${prompt}, hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
 
-      // Vite Local Dev Mock Check
-      const isLocalDev = import.meta.env.DEV;
+      // 3. Direct API call to fal.ai Flux Schnell endpoint
+      const response = await fetch("https://fal.run/fal-ai/flux/schnell", {
+        method: "POST",
+        headers: {
+          "Authorization": `Key ${falKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: finalEnhancedPrompt,
+          image_size: "square_hd",
+        }),
+      });
 
-      if (isLocalDev) {
-        console.log("🛡️ [MOCK MODE ACTIVATED] Safeguarding live API credits from local pipeline cycles.");
-        await new Promise((resolve) => setTimeout(resolve, 2500));
+      const data = await response.json();
+      console.log("🔍 RAW FAL API RESPONSE:", data);
 
-        finalImageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800";
-        finalEnhancedPrompt = `${prompt} // optimized for hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
-
-        console.log("🔍 1. MOCK DATA GENERATED:", { finalImageUrl, finalEnhancedPrompt });
-      } else {
-        // Direct fal.ai generation via subscribe (Bypasses external Express backend & CORS)
-        finalEnhancedPrompt = `${prompt}, hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
-
-        const falResult: any = await fal.subscribe("fal-ai/flux/schnell", {
-          input: {
-            prompt: finalEnhancedPrompt,
-            image_size: "square_hd",
-          },
-        });
-
-        console.log("🔍 1. RAW FAL RESPONSE DATA:", falResult);
-
-        if (!falResult || !falResult.data?.images?.[0]?.url) {
-          throw new Error("GENERATION FAILED - NO IMAGE RETURNED");
-        }
-
-        finalImageUrl = falResult.data.images[0].url;
+      if (!response.ok || !data.images?.[0]?.url) {
+        throw new Error(data.detail || data.error || "GENERATION FAILED - NO IMAGE RETURNED");
       }
 
-      console.log("🔍 2. FINAL URL SET IN STATE:", finalImageUrl);
+      const finalImageUrl = data.images[0].url;
 
-      // Set local UI state
+      // 4. Update UI state
       setResultImage(finalImageUrl);
       setEnhancedPrompt(finalEnhancedPrompt);
 
-      // Save to Firestore Global Feed
+      // 5. Save generated image to Firestore Global Feed
       await addDoc(collection(db, "global_feed"), {
         prompt,
         enhancedPrompt: finalEnhancedPrompt,
@@ -158,8 +144,8 @@ export default function Generator() {
 
       completeSummoning();
 
-      // Deduct credit if applicable
-      if (!isLegend && !isLocalDev) {
+      // Deduct credit if non-legend user
+      if (!isLegend) {
         await updateDoc(userRef, { credits: increment(-1) });
       }
     } catch (err) {
@@ -273,8 +259,8 @@ export default function Generator() {
               src={resultImage}
               alt="Summoned Vision"
               className="w-full h-auto object-cover"
-              onLoad={() => console.log("✅ 3. IMAGE RENDER SUCCESSFUL:", resultImage)}
-              onError={(e) => console.error("❌ 3. BROWSER BLOCKED / FAILED TO LOAD IMAGE:", resultImage, e)}
+              onLoad={() => console.log("✅ IMAGE RENDER SUCCESSFUL:", resultImage)}
+              onError={(e) => console.error("❌ BROWSER BLOCKED / FAILED TO LOAD IMAGE:", resultImage, e)}
             />
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-between p-6">
