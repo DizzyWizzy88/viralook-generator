@@ -16,8 +16,8 @@ import {
   addDoc,
   collection
 } from 'firebase/firestore';
-import { db, getFirebaseAuth } from '@/lib/firebase';
-import { useSummoningSequence } from '@/hooks/useSummoningSequence';
+import { db, getFirebaseAuth } from "../../lib/firebase";
+import { useSummoningSequence } from "../../hooks/useSummoningSequence";
 import {
   Sparkles,
   Zap,
@@ -118,7 +118,6 @@ export default function Generator() {
       });
 
       const data = await response.json();
-      console.log("🔍 RAW FAL API RESPONSE:", data);
 
       if (!response.ok || !data.images?.[0]?.url) {
         throw new Error(data.detail || data.error || "GENERATION FAILED - NO IMAGE RETURNED");
@@ -259,8 +258,6 @@ export default function Generator() {
               src={resultImage}
               alt="Summoned Vision"
               className="w-full h-auto object-cover"
-              onLoad={() => console.log("✅ IMAGE RENDER SUCCESSFUL:", resultImage)}
-              onError={(e) => console.error("❌ BROWSER BLOCKED / FAILED TO LOAD IMAGE:", resultImage, e)}
             />
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-between p-6">
