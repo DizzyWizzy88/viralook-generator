@@ -7,16 +7,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import {
-  doc,
-  updateDoc,
-  increment,
-  getDoc,
-  setDoc,
-  addDoc,
-  collection
-} from 'firebase/firestore';
-import { db, getFirebaseAuth } from "../../lib/firebase";
+import { getFirebaseAuth } from "../../lib/firebase";
 import { useSummoningSequence } from "../../hooks/useSummoningSequence";
 import {
   Sparkles,
@@ -37,7 +28,6 @@ export default function Generator() {
   const [enhancedPrompt, setEnhancedPrompt] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLegendUser, setIsLegendUser] = useState<boolean>(false);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
 
   const { currentMessage, startSummoning, completeSummoning, failSummoning } = useSummoningSequence();
@@ -71,82 +61,29 @@ export default function Generator() {
     setResultImage(null);
     setEnhancedPrompt(null);
     setIsGenerating(true);
+    startSummoning();
 
     try {
-      // 1. Validate environment variable
-      const falKey = import.meta.env.VITE_FAL_KEY;
-      if (!falKey) {
-        throw new Error("VITE_FAL_KEY IS MISSING FROM ENVIRONMENT VARIABLES.");
-      }
+      const idToken = await user.getIdToken();
 
-      // 2. User Credit Validation
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          credits: 1,
-          email: user.email,
-          isUnlimited: false,
-          createdAt: new Date().toISOString()
-        });
-      }
-
-      const userData = userSnap.data();
-      const isLegend = userData?.isUnlimited === true || userData?.tier === 'legend';
-      setIsLegendUser(isLegend);
-
-      if (!isLegend && (userData?.credits || 0) <= 0) {
-        throw new Error("OUT OF CREDITS");
-      }
-
-      startSummoning();
-
-      const finalEnhancedPrompt = `${prompt}, hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
-
-      // 3. Direct API call to fal.ai Flux Schnell endpoint
-      const response = await fetch("https://fal.run/fal-ai/flux/schnell", {
+      const response = await fetch("https://viralook-generator-2.onrender.com/api/generate", {
         method: "POST",
         headers: {
-          "Authorization": `Key ${falKey}`,
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
         },
-        body: JSON.stringify({
-          prompt: finalEnhancedPrompt,
-          image_size: "square_hd",
-        }),
+        body: JSON.stringify({ prompt })
       });
 
       const data = await response.json();
 
-      if (!response.ok || !data.images?.[0]?.url) {
-        throw new Error(data.detail || data.error || "GENERATION FAILED - NO IMAGE RETURNED");
+      if (!response.ok) {
+        throw new Error(data.error || "GENERATION FAILED");
       }
 
-      const finalImageUrl = data.images[0].url;
-
-      // 4. Update UI state
-      setResultImage(finalImageUrl);
-      setEnhancedPrompt(finalEnhancedPrompt);
-
-      // 5. Save generated image to Firestore Global Feed
-      await addDoc(collection(db, "global_feed"), {
-        prompt,
-        enhancedPrompt: finalEnhancedPrompt,
-        imageUrl: finalImageUrl,
-        userId: user.uid,
-        userEmail: user.email || "Anonymous",
-        userName: user.displayName || "Anonymous Creator",
-        createdAt: new Date().toISOString(),
-        isPublic: true
-      });
-
+      setResultImage(data.imageUrl);
+      setEnhancedPrompt(data.enhancedPrompt);
       completeSummoning();
-
-      // Deduct credit if non-legend user
-      if (!isLegend) {
-        await updateDoc(userRef, { credits: increment(-1) });
-      }
     } catch (err) {
       console.error("Summoning error:", err);
       const errorObject = err as Error;
@@ -271,11 +208,6 @@ export default function Generator() {
                 <Download className="w-4 h-4" />
                 Download Asset
               </a>
-              {isLegendUser && (
-                <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-black uppercase tracking-widest rounded-full">
-                  Legend Tier
-                </span>
-              )}
             </div>
           </div>
 
