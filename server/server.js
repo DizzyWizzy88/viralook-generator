@@ -2,24 +2,27 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
+import { fal } from '@fal-ai/client';
 
 dotenv.config();
+
+// Configure Fal credentials from environment variables
+fal.config({
+    credentials: process.env.FAL_KEY,
+});
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin
 if (!admin.apps.length) {
     try {
         let serviceAccount;
-
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-            // Handles raw JSON string set in Render environment variables
             serviceAccount = typeof process.env.FIREBASE_SERVICE_ACCOUNT === 'string'
                 ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
                 : process.env.FIREBASE_SERVICE_ACCOUNT;
         } else if (process.env.FIREBASE_PROJECT_ID) {
-            // Alternative: Using individual environment variables
             serviceAccount = {
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -27,49 +30,37 @@ if (!admin.apps.length) {
             };
         }
 
-        if (serviceAccount && serviceAccount.project_id || serviceAccount?.projectId) {
+        if (serviceAccount) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
             });
-            console.log("Firebase Admin successfully initialized with Service Account.");
-        } else {
-            console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT environment variable is missing or invalid on Render.");
         }
     } catch (err) {
-        console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT credentials:", err.message);
+        console.error("Firebase Admin setup error:", err.message);
     }
 }
 
-// Middleware
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// Firebase Authentication Middleware
+// Auth Middleware
 const authenticateUser = async (req, res, next) => {
     const authHeader = req.headers.authorization;
-
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Unauthorized: Missing or invalid token format.' });
+        return res.status(401).json({ error: 'Unauthorized: Missing token.' });
     }
 
-    const idToken = authHeader.split('Bearer ')[1];
-
     try {
+        const idToken = authHeader.split('Bearer ')[1];
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         req.user = decodedToken;
         next();
     } catch (error) {
-        console.error('Firebase token verification error:', error);
-        return res.status(401).json({ error: 'Unauthorized: Invalid authentication token.' });
+        return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
     }
 };
 
-// Health Check Endpoint (Required for Render)
-app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Primary Asset Generation Endpoint
+// Generation Endpoint via fal.ai
 app.post('/api/generate', authenticateUser, async (req, res) => {
     try {
         const { prompt } = req.body;
@@ -78,20 +69,25 @@ app.post('/api/generate', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'A valid text prompt is required.' });
         }
 
-        // Explicitly define finalEnhancedPrompt at top of route scope
-        const rawPrompt = prompt.trim();
+        const finalEnhancedPrompt = prompt.trim();
 
-        // Optional: Pass rawPrompt through your prompt enhancement logic here
-        const finalEnhancedPrompt = rawPrompt;
+        // Call Fal AI (using FLUX Schnell for fast, high-quality generation)
+        const result = await fal.subscribe("fal-ai/flux/schnell", {
+            input: {
+                prompt: finalEnhancedPrompt,
+                image_size: "square_hd",
+                num_images: 1,
+                enable_safety_checker: true
+            },
+            logs: true,
+        });
 
-        console.log(`[GENERATE] Processing request for user: ${req.user.uid}`);
-        console.log(`[GENERATE] Prompt: "${finalEnhancedPrompt}"`);
+        // Extract generated image URL
+        const generatedImageUrl = result.data?.images?.[0]?.url;
 
-        // TODO: Call your external image generation API (e.g., Replicate, OpenAI, Stability)
-        // Example placeholder image call:
-        // const generatedImageUrl = await callImageGenerationApi(finalEnhancedPrompt);
-        const output = await replicate.run("...", { input: { prompt: finalEnhancedPrompt } });
-        const generatedImageUrl = Array.isArray(output) ? output[0] : output;
+        if (!generatedImageUrl) {
+            throw new Error("No image URL received from fal.ai output.");
+        }
 
         return res.status(200).json({
             imageUrl: generatedImageUrl,
@@ -99,21 +95,13 @@ app.post('/api/generate', authenticateUser, async (req, res) => {
             finalEnhancedPrompt: finalEnhancedPrompt,
         });
     } catch (error) {
-        console.error('[GENERATE ERROR]:', error);
+        console.error('[FAL AI ERROR]:', error);
         return res.status(500).json({
-            error: error.message || 'Internal server error during asset synthesis.',
+            error: error.message || 'Image generation failed via fal.ai.',
         });
     }
 });
 
-    
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-    console.error('Unhandled Server Error:', err);
-    res.status(500).json({ error: 'An unexpected internal server error occurred.' });
-});
-
 app.listen(PORT, () => {
-    console.log(`Server active on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
