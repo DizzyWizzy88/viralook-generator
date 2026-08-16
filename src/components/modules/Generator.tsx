@@ -79,7 +79,13 @@ export default function Generator() {
 
       // Safely capture raw text first to avoid crashing on empty or HTML responses
       const rawText = await response.text();
-      let data: { imageUrl?: string; enhancedPrompt?: string; error?: string } = {};
+
+      let data: { 
+        imageUrl?: string; 
+        enhancedPrompt?: string; 
+        finalEnhancedPrompt?: string;
+        error?: string 
+      } = {};
 
       if (rawText) {
         try {
@@ -94,7 +100,7 @@ export default function Generator() {
       }
 
       setResultImage(data.imageUrl ?? null);
-      setEnhancedPrompt(data.enhancedPrompt ?? null);
+      setEnhancedPrompt(data.enhancedPrompt ?? data.finalEnhancedPrompt ?? null);
       completeSummoning();
     } catch (err) {
       console.error("Summoning error:", err);
