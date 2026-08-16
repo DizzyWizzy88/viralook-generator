@@ -9,4 +9,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    // Allows popup auth windows (Firebase) to communicate without COOP warnings
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
+    // Proxies local /api calls directly to your live Render backend during dev
+    proxy: {
+      '/api': {
+        target: 'https://viralook-generator-2.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 });

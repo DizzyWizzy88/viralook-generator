@@ -2,20 +2,13 @@
 
 import React, { useState } from 'react';
 import { FirebaseError } from 'firebase/app';
-import { auth, syncUserData } from '../lib/firebase';
+import { syncUserData } from '../lib/firebase';
 import {
     signInWithEmailAndPassword,
     GoogleAuthProvider,
-    signInWithPopup,
-    User
+    signInWithPopup
 } from 'firebase/auth';
-import {
-    doc,
-    getDoc,
-    setDoc,
-    serverTimestamp
-} from 'firebase/firestore';
-import { getFirebaseAuth, getFirebaseDb } from '../lib/firebase';
+import { getFirebaseAuth } from '../lib/firebase';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function LoginPage() {
@@ -24,24 +17,6 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
-    const handleOAuthSuccess = async (user: User) => {
-        const db = getFirebaseDb();
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (!userSnap.exists()) {
-            await setDoc(userRef, {
-                email: user.email,
-                credits: 2,
-                createdAt: serverTimestamp(),
-                isUnlimited: false
-            });
-            navigate("/pricing");
-        } else {
-            navigate("/dashboard");
-        }
-    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,20 +47,40 @@ export default function LoginPage() {
         }
     };
 
-   const handleGoogleLogin = async () => {
-    try {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        setError("");
 
-        if (result.user) {
-            await syncUserData(result.user);
-            navigate('/dashboard');
-        }
-    }  catch (error) {
-        console.error('Google Sign-In Error:', error);
+        try {
+            const auth = getFirebaseAuth();
+            const provider = new GoogleAuthProvider();
+            // Prompt user to select account every time
+            provider.setCustomParameters({ prompt: 'select_account' });
+
+            const result = await signInWithPopup(auth, provider);
+
+            if (result.user) {
+                await syncUserData(result.user);
+                navigate('/dashboard');
+            }
+        } catch (err) {
+            console.error('🔥 GOOGLE SIGN-IN ERROR:', err);
+            if (err instanceof FirebaseError) {
+                if (err.code === 'auth/popup-closed-by-user') {
+                    setError("Sign-in popup was closed before completing.");
+                } else if (err.code === 'auth/cancelled-popup-request') {
+                    // Ignored: User opened multiple popups sequentially
+                } else {
+                    setError("Google sign-in failed. Please try again.");
+                }
+            } else {
+                setError("An error occurred during Google authentication.");
+            }
+        } finally {
+            setLoading(false);
         }
     };
-        
+
     return (
         <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
             <div className="w-full max-w-md space-y-8">
@@ -149,7 +144,8 @@ export default function LoginPage() {
                 <button
                     onClick={handleGoogleLogin}
                     type="button"
-                    className="w-full bg-zinc-900 border border-white/5 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-800 transition-all flex items-center justify-center gap-4 group cursor-pointer"
+                    disabled={loading}
+                    className="w-full bg-zinc-900 border border-white/5 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[11px] hover:bg-zinc-800 transition-all flex items-center justify-center gap-4 group cursor-pointer disabled:opacity-50"
                 >
                     <img
                         src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
