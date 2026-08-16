@@ -1,30 +1,45 @@
 import express from 'express';
 import cors from 'cors';
+import admin from 'firebase-admin';
 
+// Initialize Firebase Admin SDK (Set environment variables on Render)
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+    });
+}
+
+const db = admin.firestore();
 const app = express();
 
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://viralook-generator-2.onrender.com',
     'https://www.viralook-generator-2.onrender.com'
 ];
 
-app.use(cors({
+const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, curl, or Postman)
+        // Return false instead of Error object so Express returns proper CORS headers
         if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
             callback(null, true);
         } else {
-            callback(new Error('Blocked by CORS policy'));
+            callback(null, false);
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
 
-// Explicitly handle preflight OPTIONS requests across all routes
-app.options('*', cors());
+// Apply CORS middleware to all routes and preflight OPTIONS requests
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
@@ -61,7 +76,7 @@ app.post('/api/generate', async (req, res) => {
 
         const finalEnhancedPrompt = `${prompt}, hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
 
-        // 3. Call Fal.ai from the Server (FAL_KEY hidden)
+        // 3. Call Fal.ai from the Server
         const falResponse = await fetch("https://fal.run/fal-ai/flux/schnell", {
             method: "POST",
             headers: {
