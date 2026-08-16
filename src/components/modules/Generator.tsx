@@ -66,7 +66,9 @@ export default function Generator() {
     try {
       const idToken = await user.getIdToken();
 
-      const response = await fetch('https://viralook-generator-2.onrender.com/api/generate', {
+      const API_URL = "https://viralook-generator-2-uvh4.onrender.com/api/generate";
+
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

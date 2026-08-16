@@ -19,19 +19,11 @@ const app = express();
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://viralook-generator-2.onrender.com',
-    'https://www.viralook-generator-2.onrender.com'
+    'https://viralook-generator-2-uvh4.onrender.com'
 ];
 
 const corsOptions = {
-    origin: (origin, callback) => {
-        // Return false instead of Error object so Express returns proper CORS headers
-        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
-            callback(null, true);
-        } else {
-            callback(null, false);
-        }
-    },
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
