@@ -1,6 +1,33 @@
 import express from 'express';
 import cors from 'cors';
 import admin from 'firebase-admin';
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+/**
+ *  Uses Gemini Flash to rewrite raw prompts, ensuring distinct spatial positions
+ * and character traits to eliminate attribute blending in image generators.
+ */
+async function expandPromptWithGemini(userPrompt) {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `You are an expert image generation prompt engineer. Rewrite the following user prompt to improve accuracy.
+Guidelines:
+1. If multiple subjects/characters are present, give them explicit spatial placement (e. g. left, right, center) and distinct visual traits to avoid color/feature blending.
+2. Keep the scene description vivid, concrete, and clear.
+3. Return ONLY the rewritten prompt text without intro text, commentary, or quotes.
+
+User Input: "${userPrompt}"`
+        });
+
+        return response.text?.trim() || userPrompt;
+    } catch (err) {
+        console.error("Gemini expansion error, using raw prompt:", err);
+        return userPrompt;
+    }
+}
 
 // Initialize Firebase Admin SDK (Set environment variables on Render)
 if (!admin.apps.length) {
@@ -41,6 +68,44 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/generate', async (req, res) => {
+    try {
+        const { prompt, autoEnhance = true } = req.body;
+        if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
+
+        // Optionally expand prompt with Gemini
+        const expandedPrompt = autoEnhance
+            ? await expandedPromptWithGemini(prompt)
+            : prompt;
+
+        // Combine with default style tags
+        const finalEnhancedPromt = `${expandedPrompt}, hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
+        
+        // Call Fal.ai image generation
+        const falResonse = await fetch("https://fal.run/fal-ai/flux/schnell", {
+            method: "POST",
+            headers: {
+                "Authorization": `Key ${process.env.FAL_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringigy({
+                prompt: finalEnhancedPrompt,
+                image_size: "sqaure_hd",
+            }),
+        });
+
+        const data = await falResponse.json();
+        const imageUrl = data.images[0].url;
+
+        return res.json({
+            imageUrl,
+            originalPromt: prompt,
+            expandedPrompt,
+            finalEnhancedPrompt
+        });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    };
+
     try {
         // 1. Verify User Firebase ID Token
         const authHeader = req.headers.authorization;
