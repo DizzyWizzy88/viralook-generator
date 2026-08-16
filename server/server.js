@@ -11,19 +11,32 @@ const PORT = process.env.PORT || 10000;
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
     try {
+        let serviceAccount;
+
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            // Handles raw JSON string set in Render environment variables
+            serviceAccount = typeof process.env.FIREBASE_SERVICE_ACCOUNT === 'string'
+                ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+                : process.env.FIREBASE_SERVICE_ACCOUNT;
+        } else if (process.env.FIREBASE_PROJECT_ID) {
+            // Alternative: Using individual environment variables
+            serviceAccount = {
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            };
+        }
+
+        if (serviceAccount && serviceAccount.project_id || serviceAccount?.projectId) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
             });
+            console.log("Firebase Admin successfully initialized with Service Account.");
         } else {
-            admin.initializeApp({
-                credential: admin.credential.applicationDefault(),
-            });
+            console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT environment variable is missing or invalid on Render.");
         }
     } catch (err) {
-        console.warn("Firebase Admin failed to initialize with credentials. Falling back to default init:", err.message);
-        admin.initializeApp();
+        console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT credentials:", err.message);
     }
 }
 
@@ -77,10 +90,11 @@ app.post('/api/generate', authenticateUser, async (req, res) => {
         // TODO: Call your external image generation API (e.g., Replicate, OpenAI, Stability)
         // Example placeholder image call:
         // const generatedImageUrl = await callImageGenerationApi(finalEnhancedPrompt);
-        const mockImageUrl = `https://picsum.photos/seed/${encodeURIComponent(finalEnhancedPrompt)}/1024/1024`;
+        const output = await replicate.run("...", { input: { prompt: finalEnhancedPrompt } });
+        const generatedImageUrl = Array.isArray(output) ? output[0] : output;
 
         return res.status(200).json({
-            imageUrl: mockImageUrl,
+            imageUrl: generatedImageUrl,
             enhancedPrompt: finalEnhancedPrompt,
             finalEnhancedPrompt: finalEnhancedPrompt,
         });
@@ -91,6 +105,8 @@ app.post('/api/generate', authenticateUser, async (req, res) => {
         });
     }
 });
+
+    
 
 // Global Error Handler
 app.use((err, req, res, next) => {
