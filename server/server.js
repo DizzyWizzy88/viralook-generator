@@ -1,49 +1,21 @@
-// server.js
-const express = require('express');
-const cors = require('cors');
-const admin = require('firebase-admin');
+import express from 'express';
+import cors from 'cors';
 
-// 1. Initialize Firebase Admin using discrete environment variables or fallback JSON
-const privateKey = process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined;
-
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    // Option A: Full JSON string
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-} else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
-    // Option B: Individual Render Env Vars
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: privateKey,
-        })
-    });
-} else {
-    // Option C: Local Default Credentials
-    admin.initializeApp();
-}
-
-const db = admin.firestore();
 const app = express();
 
-// 2. Comprehensive CORS configuration
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://viralook-generator-2.onrender.com'
+    'https://www.viralook-generator-2.onrender.com'
 ];
 
 app.use(cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, or Postman)
         if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
             callback(null, true);
         } else {
-            callback(null, true); // Fallback allow during dev
+            callback(new Error('Blocked by CORS policy'));
         }
     },
     credentials: true,
@@ -51,7 +23,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Explicit Preflight Handling
+// Explicitly handle preflight OPTIONS requests across all routes
 app.options('*', cors());
 
 app.use(express.json());
