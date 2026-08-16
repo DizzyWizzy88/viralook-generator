@@ -77,14 +77,14 @@ app.post('/api/generate', async (req, res) => {
 
         // Optionally expand prompt with Gemini
         const expandedPrompt = autoEnhance
-            ? await expandedPromptWithGemini(prompt)
+            ? await expandPromptWithGemini(prompt)
             : prompt;
 
         // Combine with default style tags
         const finalEnhancedPromt = `${expandedPrompt}, hyper-realistic commercial studio presentation, dark aesthetic neon highlights, 8k resolution cinematic lighting`;
         
         // Call Fal.ai image generation
-        const falResonse = await fetch("https://fal.run/fal-ai/flux/schnell", {
+        const falResponse = await fetch("https://fal.run/fal-ai/flux/schnell", {
             method: "POST",
             headers: {
                 "Authorization": `Key ${process.env.FAL_KEY}`,
@@ -97,6 +97,10 @@ app.post('/api/generate', async (req, res) => {
         });
 
         const data = await falResponse.json();
+        if (!falResponse.ok) {
+            throw new Error(data.detail || "Fal.ai image generation failed");
+        }
+        
         const imageUrl = data.images[0].url;
 
         return res.json({
