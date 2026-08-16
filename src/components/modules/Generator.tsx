@@ -66,7 +66,7 @@ export default function Generator() {
     try {
       const idToken = await user.getIdToken();
 
-      const response = await fetch("https://viralook-generator-2.onrender.com/api/generate", {
+      const response = await fetch('https://viralook-generator-2.onrender.com/api/generate', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -75,14 +75,24 @@ export default function Generator() {
         body: JSON.stringify({ prompt })
       });
 
-      const data = await response.json();
+      // Safely capture raw text first to avoid crashing on empty or HTML responses
+      const rawText = await response.text();
+      let data: { imageUrl?: string; enhancedPrompt?: string; error?: string } = {};
 
-      if (!response.ok) {
-        throw new Error(data.error || "GENERATION FAILED");
+      if (rawText) {
+        try {
+          data = JSON.parse(rawText) as typeof data;
+        } catch {
+          throw new Error(`Server returned non-JSON response (${response.status})`);
+        }
       }
 
-      setResultImage(data.imageUrl);
-      setEnhancedPrompt(data.enhancedPrompt);
+      if (!response.ok) {
+        throw new Error(data.error || `GENERATION FAILED (${response.status})`);
+      }
+
+      setResultImage(data.imageUrl ?? null);
+      setEnhancedPrompt(data.enhancedPrompt ?? null);
       completeSummoning();
     } catch (err) {
       console.error("Summoning error:", err);
