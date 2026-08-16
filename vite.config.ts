@@ -12,9 +12,9 @@ export default defineConfig({
   server: {
     // Allows popup auth windows (Firebase) to communicate without COOP warnings
     headers: {
-      'Cross-Origin-Opener-Policy': 'unsafe-none',
-      'Corss-Origin-Embedder-Policy': 'unsafe-none',
-    },
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none',
+  },
     // Proxies local /api calls directly to your live Render backend during dev
     proxy: {
       '/api': {

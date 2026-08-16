@@ -68,13 +68,14 @@ export default function Generator() {
 
       const API_URL = "https://viralook-generator-2-uvh4.onrender.com/api/generate";
 
+      const finalEnhancedPrompt = prompt;
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${idToken}`
         },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt: finalEnhancedPrompt }),
       });
 
       // Safely capture raw text first to avoid crashing on empty or HTML responses
