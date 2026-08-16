@@ -1,63 +1,5 @@
-"use client";
-
-import { useState, useEffect } from 'react';
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged,
-  User
-} from 'firebase/auth';
-import { getFirebaseAuth } from "../../lib/firebase";
-import { useSummoningSequence } from "../../hooks/useSummoningSequence";
-import {
-  Sparkles,
-  Zap,
-  AlertCircle,
-  RefreshCw,
-  Wand2,
-  LogIn,
-  Lock,
-  Download
-} from 'lucide-react';
-
-export default function Generator() {
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState<boolean>(true);
-  const [prompt, setPrompt] = useState<string>('');
-  const [resultImage, setResultImage] = useState<string | null>(null);
-  const [enhancedPrompt, setEnhancedPrompt] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loginMessage, setLoginMessage] = useState<string | null>(null);
-
-  const { currentMessage, startSummoning, completeSummoning, failSummoning } = useSummoningSequence();
-
-  useEffect(() => {
-    const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setAuthLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogin = async () => {
-    const auth = getFirebaseAuth();
-    const provider = new GoogleAuthProvider();
-    setLoginMessage(null);
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      console.error("Login failed:", err);
-      setLoginMessage("AUTHENTICATION FAILED. PLEASE TRY AGAIN.");
-    }
-  };
-
-  const handleSummon = async () => {
-    if (!prompt.trim() || !user) return;
-
-    const finalEnhancedPrompt = prompt.trim();
+const handleSummon = async () => {
+    if (!prompt || !user) return;
 
     setError(null);
     setResultImage(null);
@@ -67,7 +9,10 @@ export default function Generator() {
 
     try {
       const idToken = await user.getIdToken();
+
       const API_URL = "https://viralook-generator-2-uvh4.onrender.com/api/generate";
+
+      const finalEnhancedPrompt = prompt;
 
       const response = await fetch(API_URL, {
         method: "POST",
@@ -108,7 +53,7 @@ export default function Generator() {
       const errorObject = err as Error;
       const msg = errorObject.message || "THE SPIRITS ARE SILENT...";
       setError(msg);
-      failSummoning();
+      failSummoning(msg);
     } finally {
       setIsGenerating(false);
     }
