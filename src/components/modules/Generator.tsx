@@ -5,8 +5,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
-  User
-} from 'firebase/auth';
+  User,
+  auth
+} from './lib/firebase';
 import { getFirebaseAuth } from "../../lib/firebase";
 import { useSummoningSequence } from "../../hooks/useSummoningSequence";
 import {
@@ -66,7 +67,7 @@ export default function Generator() {
     startSummoning();
 
     try {
-      const idToken =await auth.currentUser?.getIdToken(true);
+      const idToken =await user.getIdToken(true);
 
       const API_URL = "https://viralook-generator-2-uvh4.onrender.com/api/generate";
 
