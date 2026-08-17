@@ -78,7 +78,6 @@ export default function Generator() {
         body: JSON.stringify({ prompt: finalEnhancedPrompt }),
       });
 
-      // Safely capture raw text first to avoid crashing on empty or HTML responses
       const rawText = await response.text();
 
       let data: { 
@@ -100,7 +99,31 @@ export default function Generator() {
         throw new Error(data.error || `GENERATION FAILED (${response.status})`);
       }
 
-      setResultImage(data.imageUrl ?? null);
+      // Convert remote FAL URL to local blob URL and validate content type
+      if (data.imageUrl) {
+        console.log("Raw FAL Image URL:", data.imageUrl);
+        try {
+          const imgResponse = await fetch(data.imageUrl);
+
+          if (!imgResponse.ok) {
+            throw new Error(`CDN fetch failed with status ${imgResponse.status}`);
+          }
+
+          const blob = await imgResponse.blob();
+          console.log("📦 Blob fetched:", { type: blob.type, size: `${blob.size} bytes` });
+
+          if (!blob.type.startsWith("image/")) {
+            throw new Error(`CDN payload is not an image (received ${blob.type})`);
+          }
+
+          const localUrl = URL.createObjectURL(blob);
+          setResultImage(localUrl);
+        } catch (imgErr) {
+          console.warn("Blob conversion failed, falling back to direct URL:", imgErr);
+          setResultImage(data.imageUrl);
+        }
+      }
+
       setEnhancedPrompt(data.enhancedPrompt ?? data.finalEnhancedPrompt ?? null);
       completeSummoning();
     } catch (err) {
@@ -209,20 +232,23 @@ export default function Generator() {
       {/* RESULT IMAGE DISPLAY */}
       {resultImage && !isGenerating && (
         <div className="space-y-6 animate-in zoom-in-95 duration-500">
-          <div className="rounded-[2.5rem] overflow-hidden border border-zinc-800 shadow-2xl relative group min-h-[300px] bg-zinc-950 flex items-center justify-center">
+          <div className="rounded-[2.5rem] overflow-hidden border border-zinc-800 shadow-2xl relative group w-full aspect-square bg-zinc-950 flex items-center justify-center">
             <img
               src={resultImage}
               alt="Summoned Vision"
-              className="w-full h-auto object-cover"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover block"
+              onLoad={() => console.log("✅ Asset rendered successfully!")}
+              onError={(e) => console.error("🔥 Image render failure:", e)}
             />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-between p-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-between p-6 pointer-events-none">
               <a
                 href={resultImage}
                 target="_blank"
                 rel="noopener noreferrer"
                 download="summoned-vision.png"
-                className="px-4 py-2 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-2 hover:bg-zinc-200 transition-colors shadow-lg"
+                className="px-4 py-2 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-2 hover:bg-zinc-200 transition-colors shadow-lg pointer-events-auto"
               >
                 <Download className="w-4 h-4" />
                 Download Asset

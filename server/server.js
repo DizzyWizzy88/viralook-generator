@@ -61,44 +61,58 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-// Generation Endpoint via fal.ai
-app.post('/api/generate', authenticateUser, async (req, res) => {
+app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
+  const { prompt } = req.body;
+  const userId = req.user.uid;
+
+  console.log(`\n================ GENERATION REQUEST ================`);
+  console.log(`[GENERATE] Processing prompt for user: ${userId}`);
+  console.log(`[GENERATE] Incoming Prompt: "${prompt}"`);
+
   try {
-    const { prompt } = req.body;
+    // 1. Define input parameters explicitly
+    const falInput = {
+      prompt: prompt,
+      image_size: "square_hd", // Ensure valid model size parameter
+      enable_safety_checker: true,
+      num_images: 1,
+    };
 
-    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return res.status(400).json({ error: 'A valid text prompt is required.' });
-    }
+    console.log(`[FAL CALL] Sending payload to fal.ai:`, JSON.stringify(falInput, null, 2));
 
-    const finalEnhancedPrompt = prompt.trim();
-    console.log(`[GENERATE] Processing prompt via fal.ai for user: ${req.user.uid}`);
-
-    // Generate image via fal.ai FLUX Schnell
-    const result = await fal.subscribe("fal-ai/flux-pro/v1.1", {
-      input: {
-        prompt: finalEnhancedPrompt,
-        image_size: 'square_hd',
-        num_images: 1,
-        enable_safety_checker: true,
-      },
+    // 2. Execute fal.ai request
+    const result = await fal.subscribe("fal-ai/flux/dev", {
+      input: falInput,
       logs: true,
+      onQueueUpdate: (update) => {
+        if (update.status === "IN_PROGRESS") {
+          update.logs.map((log) => log.message).forEach(console.log);
+        }
+      },
     });
 
-    const generatedImageUrl = result.data?.images?.[0]?.url;
+    console.log(`[FAL RESPONSE] Raw result payload:`, JSON.stringify(result, null, 2));
 
-    if (!generatedImageUrl) {
-      throw new Error('No image URL returned from fal.ai.');
+    // 3. Validate image output URL structure
+    const imageUrl = result.images?.[0]?.url || result.image?.url;
+
+    if (!imageUrl) {
+      console.error(`[FAL ERROR] No image URL found in response structure.`);
+      return res.status(500).json({ error: "No image URL returned from FAL model" });
     }
 
-    return res.status(200).json({
-      imageUrl: generatedImageUrl,
-      enhancedPrompt: finalEnhancedPrompt,
-      finalEnhancedPrompt: finalEnhancedPrompt,
+    console.log(`[FAL SUCCESS] Image generated: ${imageUrl}`);
+    console.log(`===================================================\n`);
+
+    return res.json({
+      imageUrl,
+      enhancedPrompt: result.prompt || prompt,
     });
+
   } catch (error) {
-    console.error('[GENERATE ERROR]:', error);
+    console.error(`❌ [GENERATE ERROR] Exception during fal.ai request:`, error);
     return res.status(500).json({
-      error: error.message || 'Image generation failed via fal.ai.',
+      error: error.message || "Failed to generate asset via fal.ai",
     });
   }
 });
