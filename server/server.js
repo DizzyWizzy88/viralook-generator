@@ -7,26 +7,58 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Firebase Admin if not already active
+import admin from 'firebase-admin';
+
 if (!admin.apps.length) {
-  admin.initializeApp();
+  // Option A: Service account via individual env variables
+  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // Replace escaped newlines if passed as a string in Render
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
+    });
+    console.log(`Firebase Admin initialized for project: ${process.env.FIREBASE_PROJECT_ID}`);
+  } 
+  // Option B: Service account via single JSON string env variable
+  else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    console.log(`Firebase Admin initialized for project: ${serviceAccount.project_id}`);
+  } 
+  else {
+    admin.initializeApp();
+    console.log("Firebase Admin initialized with default credentials.");
+  }
 }
 
-// Middleware: Verify ID Token
 const verifyFirebaseToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
+  
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token format' });
   }
 
   const idToken = authHeader.split('Bearer ')[1];
+
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(token);
     req.user = decodedToken;
     next();
   } catch (error) {
-    console.error('Firebase Auth Error:', error);
-    return res.status(403).json({ error: 'Unauthorized: Invalid token' });
+    // Detailed error logging to diagnose the mismatch
+    console.error('❌ Firebase Auth Verification Error Details:', {
+      code: error.code,
+      message: error.message,
+    });
+
+    return res.status(403).json({ 
+      error: `Unauthorized: ${error.message || 'Invalid token'}` 
+    });
   }
 };
 

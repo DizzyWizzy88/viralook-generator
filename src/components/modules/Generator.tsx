@@ -66,7 +66,8 @@ export default function Generator() {
     startSummoning();
 
     try {
-      const idToken = await user.getIdToken();
+      const idToken =await auth.currentUser?.getIdToken(true);
+
       const API_URL = "https://viralook-generator-2-uvh4.onrender.com/api/generate";
 
       const response = await fetch(API_URL, {
