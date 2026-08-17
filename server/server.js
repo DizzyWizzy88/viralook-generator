@@ -74,7 +74,7 @@ app.post('/api/generate', authenticateUser, async (req, res) => {
     console.log(`[GENERATE] Processing prompt via fal.ai for user: ${req.user.uid}`);
 
     // Generate image via fal.ai FLUX Schnell
-    const result = await fal.subscribe('fal-ai/flux-pro', {
+    const result = await fal.subscribe("fal-ai/flux-pro/v1.1", {
       input: {
         prompt: finalEnhancedPrompt,
         image_size: 'square_hd',
