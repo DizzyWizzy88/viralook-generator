@@ -5,9 +5,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
-  User,
-  auth
-} from './lib/firebase';
+  type User
+} from 'firebase/auth';
 import { getFirebaseAuth } from "../../lib/firebase";
 import { useSummoningSequence } from "../../hooks/useSummoningSequence";
 import {
@@ -67,7 +66,7 @@ export default function Generator() {
     startSummoning();
 
     try {
-      const idToken =await user.getIdToken(true);
+      const idToken = await user.getIdToken(true);
 
       const API_URL = "https://viralook-generator-2-uvh4.onrender.com/api/generate";
 
@@ -101,7 +100,6 @@ export default function Generator() {
         throw new Error(data.error || `GENERATION FAILED (${response.status})`);
       }
 
-      // Convert remote FAL URL to local blob URL and validate content type
       if (data.imageUrl) {
         console.log("Raw FAL Image URL:", data.imageUrl);
         try {
